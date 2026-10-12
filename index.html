@@ -25,6 +25,7 @@ function teacherOk(rem){try{sessionStorage.setItem('mashati_auth','t');sessionSt
 function isTeacherName(u){return /@/.test(u)||/^(المعلم|معلم|teacher|admin|المشرف)$/i.test(u);}
 /* دخول المعلم: الخادم أولاً، ثم كلمة مرور الجهاز */
 function teacherLogin(u,p,rem,cf){
+ cf=cf||((window.MX_CONFIG&&window.MX_CONFIG.url&&window.MX_CONFIG.key)?{u:String(window.MX_CONFIG.url).replace(/\/+$/,''),k:String(window.MX_CONFIG.key)}:null);
  var email=/@/.test(u)?u.trim().toLowerCase():(localEmail()||TEACHER_EMAIL);
  function viaLocal(serverSaid){return checkLocal(p).then(function(ok){
    if(ok)return teacherOk(rem);
