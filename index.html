@@ -765,6 +765,7 @@ body.student-mode .fs-badge::after{content:' · وضع الطالب'}
 <button class="nav-btn active" data-page="home">🏠 الرئيسية</button>
 <button class="nav-btn" data-page="classes">👥 الفصول والطلاب</button>
 <button class="nav-btn" data-page="education">📖 المنهج</button>
+<button class="nav-btn" data-page="assistant">🎓 مساعد المعلم</button>
 <button class="nav-btn" data-page="lab">🧪 مختبري</button>
 <button class="nav-btn" data-page="portfolio">🏅 ملف الإنجاز</button>
 <button class="nav-btn" data-page="reports">📊 التقارير</button>
@@ -803,6 +804,7 @@ body.student-mode .fs-badge::after{content:' · وضع الطالب'}
 </div>
 <div id="lessonDetail" style="display:none"></div>
 </div>
+<div class="page" id="page-assistant"><iframe id="teacherAssistantFrame" title="مساعد المعلم" src="teacher-assistant.html" style="display:block;width:100%;height:calc(100vh - 96px);min-height:720px;border:0;border-radius:16px;background:#0a0e1a"></iframe></div>
 <div class="page" id="page-lab"><div id="labContent"></div></div>
 <div class="page" id="page-portfolio"><div id="portfolioList"></div></div>
 <div class="page" id="page-reports"><div id="reportsContent"></div></div>
@@ -1074,7 +1076,7 @@ window.updateLabEditBtn=updateLabEditBtn;
 function toggleLabEditMode(){labEditMode=!labEditMode;updateLabEditBtn();renderLab();toast(labEditMode?'✏️ وضع التعديل مُفعّل':'👁️ عاد إلى وضع العرض');}
 window.toggleLabEditMode=toggleLabEditMode;
 
-var PAGES={home:{t:'الرئيسية',s:'لوحة التحكم'},classes:{t:'الفصول والطلاب',s:''},education:{t:'المنهج',s:'دروس الكيمياء 3 والعرض البصري'},lab:{t:'مختبري',s:'الخطط الفصلية'},portfolio:{t:'ملف الإنجاز',s:'الشهادات'},reports:{t:'التقارير',s:'تحليلية'},settings:{t:'الإعدادات',s:''}};
+var PAGES={home:{t:'الرئيسية',s:'لوحة التحكم'},classes:{t:'الفصول والطلاب',s:''},education:{t:'المنهج',s:'دروس الكيمياء 3 والعرض البصري'},assistant:{t:'مساعد المعلم',s:'لوحة الفصل ومتابعة الطلاب'},lab:{t:'مختبري',s:'الخطط الفصلية'},portfolio:{t:'ملف الإنجاز',s:'الشهادات'},reports:{t:'التقارير',s:'تحليلية'},settings:{t:'الإعدادات',s:''}};
 function navigate(p){if(!PAGES[p])p='home';state.page=p;if(p!=='lab') labEditMode=false;document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-page')===p);});document.querySelectorAll('.page').forEach(function(pg){pg.classList.toggle('active',pg.id==='page-'+p);});if(el('pageTitle'))el('pageTitle').textContent=PAGES[p].t;if(el('pageSub'))el('pageSub').textContent=PAGES[p].s;save();renderAll();updateLabEditBtn();if(window.innerWidth<900)el('sidebar').classList.remove('open');}
 window.navigate=navigate;
 document.querySelectorAll('.nav-btn').forEach(function(b){b.onclick=function(){navigate(this.getAttribute('data-page'));};});

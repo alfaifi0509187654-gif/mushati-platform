@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta name="theme-color" content="#0a0e1a">
+<title>لوحة الفصل — ثالث ثانوي / أ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#0a0e1a;color:#e8edf5;line-height:1.5;overflow-x:hidden;padding-bottom:76px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+.cd-header{position:sticky;top:0;background:#0a0e1a;z-index:100;padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #1a1f2e}
+.cd-header .icon-btn{width:40px;height:40px;border-radius:50%;background:#141a2b;display:flex;align-items:center;justify-content:center;font-size:18px;transition:.2s}
+.cd-header .icon-btn:active{background:#1f2638;transform:scale(.95)}
+.cd-header .title{flex:1;text-align:center;font-size:17px;font-weight:800;color:#fff;letter-spacing:.2px}
+.cd-header .title small{display:block;font-size:11px;color:#7a8499;font-weight:700;margin-top:2px}
+
+.cd-tabs{display:flex;gap:4px;background:#141a2b;border-radius:14px;padding:4px;margin:0 16px 14px;overflow-x:auto;scrollbar-width:none}
+.cd-tabs::-webkit-scrollbar{display:none}
+.cd-tab{flex:1;min-width:90px;padding:10px 12px;border-radius:11px;font-size:13px;font-weight:800;color:#7a8499;transition:.2s;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
+.cd-tab.active{background:#2a3347;color:#fff;box-shadow:0 4px 14px -6px rgba(59,130,246,.4)}
+.cd-tab .badge{min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:#3b82f6;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:monospace}
+
+.cd-stats-card{background:linear-gradient(135deg,#141a2b 0%,#1a2138 100%);border:1px solid #232b3f;border-radius:18px;margin:0 16px 18px;padding:18px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;box-shadow:0 8px 24px -12px rgba(0,0,0,.6)}
+.cd-stat{text-align:center;padding:4px 2px;border-left:1px solid #232b3f;cursor:pointer;transition:.2s}
+.cd-stat:first-child{border-left:none}
+.cd-stat:active{transform:scale(.96)}
+.cd-stat .lbl{font-size:11.5px;color:#8892a6;font-weight:700;margin-bottom:6px;line-height:1.35}
+.cd-stat .val{font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1}
+.cd-stat .val.green{color:#22c55e}
+.cd-stat .val.blue{color:#3b82f6}
+.cd-stat .val.red{color:#ef4444}
+.cd-stat .val.white{color:#ffffff}
+
+.cd-icons-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px 6px;padding:0 12px 20px}
+.cd-icon-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 2px;border-radius:12px;transition:.2s;cursor:pointer;user-select:none}
+.cd-icon-tile:active{background:#141a2b;transform:scale(.94)}
+.cd-icon-circle{width:48px;height:48px;border-radius:50%;background:#141a2b;display:flex;align-items:center;justify-content:center;font-size:22px;transition:.2s;border:1px solid #232b3f}
+.cd-icon-tile:active .cd-icon-circle{background:#1a2138}
+.cd-icon-tile .lbl{font-size:10.5px;color:#c8d1e3;font-weight:700;text-align:center;line-height:1.25;min-height:24px;display:flex;align-items:center;justify-content:center}
+.cd-icon-circle.green{color:#22c55e;border-color:#22c55e33}
+.cd-icon-circle.blue{color:#3b82f6;border-color:#3b82f633}
+.cd-icon-circle.red{color:#ef4444;border-color:#ef444433}
+.cd-icon-circle.amber{color:#f59e0b;border-color:#f59e0b33}
+.cd-icon-circle.violet{color:#a855f7;border-color:#a855f733}
+.cd-icon-circle.teal{color:#14b8a6;border-color:#14b8a633}
+.cd-icon-circle.orange{color:#f97316;border-color:#f9731633}
+
+.cd-section{background:#141a2b;border:1px solid #232b3f;border-radius:14px;margin:0 16px 12px;overflow:hidden}
+.cd-section-head{padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;transition:.15s}
+.cd-section-head:active{background:#1a2138}
+.cd-section-head .arrow{font-size:14px;color:#7a8499;transition:.3s;margin-right:auto}
+.cd-section.open .cd-section-head .arrow{transform:rotate(180deg)}
+.cd-section-head h3{font-size:14.5px;font-weight:800;color:#fff;flex:1}
+.cd-section-body{max-height:0;overflow:hidden;transition:max-height .4s ease;border-top:1px solid transparent}
+.cd-section.open .cd-section-body{max-height:2000px;border-top-color:#232b3f;padding:14px 16px}
+
+.cd-chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.cd-chart-box{background:#0f1420;border-radius:12px;padding:12px;border:1px solid #1f2638}
+.cd-chart-box .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:11.5px;font-weight:800}
+.cd-chart-box .lbl{color:#8892a6}
+.cd-chart-box .val{font-family:monospace;font-size:15px;font-weight:900}
+.cd-chart-box .val.green{color:#22c55e}
+.cd-chart-box .val.blue{color:#3b82f6}
+.cd-chart-svg{width:100%;height:70px;display:block}
+
+.cd-bar-vertical{background:#0f1420;border-radius:12px;padding:14px;border:1px solid #1f2638;display:flex;align-items:flex-end;gap:8px;height:110px;margin-bottom:14px}
+.cd-vbar{flex:1;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#ef4444,#991b1b);transition:.3s;min-height:8px;position:relative}
+.cd-vbar .lbl{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:10px;color:#8892a6;font-weight:800}
+
+.cd-list-head{display:flex;justify-content:space-between;align-items:center;padding:12px 4px 8px;border-bottom:1px solid #1f2638;margin-bottom:8px}
+.cd-list-head h4{font-size:13px;font-weight:800;color:#fff}
+.cd-list-head .count{font-size:11.5px;color:#7a8499;font-weight:800;font-family:monospace}
+.cd-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;background:#0f1420;border:1px solid #1f2638;margin-bottom:6px;transition:.15s;cursor:pointer}
+.cd-row:active{background:#1a2138}
+.cd-row .num{width:32px;height:32px;border-radius:9px;background:#1a2138;color:#8892a6;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:12.5px;font-weight:900;flex-shrink:0}
+.cd-row .info{flex:1;min-width:0}
+.cd-row .name{font-size:13.5px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd-row .meta{font-size:11px;color:#7a8499;font-weight:700;margin-top:2px;font-family:monospace}
+.cd-row .score{font-family:monospace;font-size:14px;font-weight:900;padding:5px 12px;border-radius:9px;background:#1a2138;color:#8892a6;min-width:64px;text-align:center}
+.cd-row .score.high{background:#22c55e22;color:#22c55e}
+.cd-row .score.mid{background:#f59e0b22;color:#f59e0b}
+.cd-row .score.low{background:#ef444422;color:#ef4444}
+
+.cd-empty{text-align:center;padding:40px 20px;color:#5a6478}
+.cd-empty .icon{font-size:52px;opacity:.4;margin-bottom:12px}
+.cd-empty h4{font-size:14.5px;font-weight:800;color:#c8d1e3;margin-bottom:6px}
+.cd-empty p{font-size:12px;color:#7a8499}
+
+.cd-bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#0a0e1a;border-top:1px solid #1a1f2e;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px 12px;z-index:200;box-shadow:0 -8px 24px -8px rgba(0,0,0,.5)}
+.cd-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:10px;transition:.2s;cursor:pointer}
+.cd-nav-item:active{background:#141a2b}
+.cd-nav-item .ic{font-size:20px;line-height:1}
+.cd-nav-item .lbl{font-size:10px;color:#7a8499;font-weight:800;text-align:center;line-height:1.2}
+.cd-nav-item.active .lbl{color:#3b82f6}
+.cd-nav-item.active .ic{filter:drop-shadow(0 0 6px rgba(59,130,246,.6))}
+
+.cd-overlay{position:fixed;inset:0;background:rgba(10,14,26,.85);backdrop-filter:blur(4px);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.cd-overlay.show{display:flex}
+.cd-sheet{background:#141a2b;width:100%;max-width:520px;max-height:85vh;border-radius:20px 20px 0 0;overflow:hidden;display:flex;flex-direction:column;border-top:3px solid #3b82f6}
+.cd-sheet-head{padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #232b3f;flex-shrink:0}
+.cd-sheet-head h3{font-size:15px;font-weight:800;color:#fff;flex:1}
+.cd-sheet-head .close{width:32px;height:32px;border-radius:50%;background:#1a2138;display:flex;align-items:center;justify-content:center;font-size:16px;color:#8892a6}
+.cd-sheet-body{padding:18px;overflow-y:auto;flex:1;color:#c8d1e3;font-size:13.5px;line-height:1.8}
+.cd-sheet-body h4{font-size:13px;font-weight:800;color:#fff;margin:12px 0 8px}
+.cd-sheet-body h4:first-child{margin-top:0}
+.cd-sheet-foot{padding:12px 18px;border-top:1px solid #232b3f;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+.cd-btn{padding:10px 18px;border-radius:11px;font-size:13px;font-weight:800;display:inline-flex;align-items:center;gap:6px;transition:.2s;border:1px solid transparent}
+.cd-btn.primary{background:#3b82f6;color:#fff}
+.cd-btn.primary:active{background:#2563eb}
+.cd-btn.ghost{background:#1a2138;color:#c8d1e3;border-color:#232b3f}
+.cd-btn.ghost:active{background:#232b3f}
+
+.cd-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(140px);background:#1e293b;color:#fff;padding:12px 20px;border-radius:12px;font-weight:800;font-size:13px;z-index:600;transition:.3s;border:1px solid #334155;box-shadow:0 12px 32px -8px rgba(0,0,0,.6);max-width:90vw;text-align:center}
+.cd-toast.show{transform:translateX(-50%) translateY(0)}
+
+.cd-donut-wrap{display:flex;align-items:center;gap:16px;padding:10px 0}
+.cd-donut{position:relative;width:90px;height:90px;flex-shrink:0}
+.cd-donut svg{transform:rotate(-90deg);width:100%;height:100%}
+.cd-donut .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:monospace;font-weight:900;font-size:18px;color:#fff}
+.cd-donut-legend{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;flex:1}
+.cd-donut-legend div{display:flex;align-items:center;gap:8px;color:#c8d1e3}
+.cd-donut-legend .dot{width:10px;height:10px;border-radius:50%}
+
+@media(max-width:380px){
+  .cd-icons-grid{grid-template-columns:repeat(5,1fr);gap:8px 4px}
+  .cd-icon-circle{width:42px;height:42px;font-size:19px}
+  .cd-icon-tile .lbl{font-size:9.5px}
+  .cd-stat .val{font-size:22px}
+  .cd-stat .lbl{font-size:10.5px}
+}
+@media(min-width:600px){
+  .cd-icons-grid{grid-template-columns:repeat(8,1fr);padding:0 20px 24px}
+  .cd-stats-card,.cd-section,.cd-tabs{margin-left:20px;margin-right:20px}
+}
+</style>
+</head>
+<body>
+
+<header class="cd-header">
+  <button class="icon-btn" onclick="cdBack()">←</button>
+  <div class="title">
+    <span id="cdClassTitle">ثالث ثانوي / أ</span>
+    <small id="cdClassName">كيمياء 3 · CHM 301</small>
+  </div>
+  <button class="icon-btn" onclick="cdPrint()">🖨️</button>
+</header>
+
+<nav class="cd-tabs" id="cdTabs">
+  <button class="cd-tab active" data-tab="general" onclick="cdSwitchTab('general')">عام</button>
+  <button class="cd-tab" data-tab="students" onclick="cdSwitchTab('students')">الطلاب</button>
+  <button class="cd-tab" data-tab="yearwork" onclick="cdSwitchTab('yearwork')">أعمال السنة <span class="badge" id="cdTabBadge1">0</span></button>
+  <button class="cd-tab" data-tab="finals" onclick="cdSwitchTab('finals')">الاختبارات النهائية</button>
+</nav>
+
+<main id="cdMain">
+
+  <section id="cdTab-general" class="cd-tab-content">
+
+    <div class="cd-stats-card">
+      <div class="cd-stat" onclick="cdOpenStatsDetail('students')">
+        <div class="lbl">الطلاب</div>
+        <div class="val white" id="cdStatStudents">0</div>
+      </div>
+      <div class="cd-stat" onclick="cdOpenStatsDetail('level')">
+        <div class="lbl">المستوى<br>العام</div>
+        <div class="val blue" id="cdStatLevel">0%</div>
+      </div>
+      <div class="cd-stat" onclick="cdOpenStatsDetail('attendance')">
+        <div class="lbl">الحضور<br>والغياب</div>
+        <div class="val green" id="cdStatAtt">0%</div>
+      </div>
+      <div class="cd-stat" onclick="cdOpenStatsDetail('behavior')">
+        <div class="lbl">السلوك</div>
+        <div class="val red" id="cdStatBehavior">0%</div>
+      </div>
+    </div>
+
+    <div class="cd-icons-grid">
+      <div class="cd-icon-tile" onclick="cdAction('print')"><div class="cd-icon-circle blue">🖨️</div><div class="lbl">طباعة</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('followups')"><div class="cd-icon-circle violet">📋</div><div class="lbl">المتابعات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('messages')"><div class="cd-icon-circle teal">✈️</div><div class="lbl">رسالة للطلاب</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('exams')"><div class="cd-icon-circle green">📝</div><div class="lbl">اختبارات الفصل</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('behavior')"><div class="cd-icon-circle red">⭐</div><div class="lbl">السلوك</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('attendance')"><div class="cd-icon-circle green">✅</div><div class="lbl">الحضور والغياب</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('qiyas')"><div class="cd-icon-circle blue">📐</div><div class="lbl">قياس</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('learningStyles')"><div class="cd-icon-circle violet">🧠</div><div class="lbl">أنماط التعلم</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('notes')"><div class="cd-icon-circle amber">📝</div><div class="lbl">الملاحظات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('book')"><div class="cd-icon-circle teal">📖</div><div class="lbl">الكتاب</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('groups')"><div class="cd-icon-circle blue">👥</div><div class="lbl">المجموعات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('tools')"><div class="cd-icon-circle violet">✨</div><div class="lbl">الأدوات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('lateStudents')"><div class="cd-icon-circle orange">🕐</div><div class="lbl">الطلاب المتأخرون</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('learningLoss')"><div class="cd-icon-circle red">📉</div><div class="lbl">الفاقد التعليمي</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('whiteboard')"><div class="cd-icon-circle teal">🖍️</div><div class="lbl">السبورة</div></div>
+    </div>
+
+    <div class="cd-section" id="cdSectionSchedule">
+      <div class="cd-section-head" onclick="cdToggleSection('cdSectionSchedule')">
+        <span>📅</span><h3>الجدول الدراسي</h3><span class="arrow">▼</span>
+      </div>
+      <div class="cd-section-body" id="cdSectionScheduleBody"></div>
+    </div>
+
+    <div class="cd-section" id="cdSectionStats">
+      <div class="cd-section-head" onclick="cdToggleSection('cdSectionStats')">
+        <span>📊</span><h3>الإحصائيات</h3><span class="arrow">▼</span>
+      </div>
+      <div class="cd-section-body" id="cdSectionStatsBody"></div>
+    </div>
+
+    <div class="cd-section open" id="cdSectionList">
+      <div class="cd-section-head" onclick="cdToggleSection('cdSectionList')">
+        <span>📋</span><h3>الكشف العام</h3><span class="arrow">▼</span>
+      </div>
+      <div class="cd-section-body" id="cdSectionListBody"></div>
+    </div>
+
+  </section>
+
+  <section id="cdTab-students" class="cd-tab-content" style="display:none">
+    <div class="cd-section open">
+      <div class="cd-section-head">
+        <span>👥</span><h3>سجل الطلاب</h3>
+        <span style="font-size:12px;color:#7a8499;font-weight:800;font-family:monospace" id="cdStudentsCount">0</span>
+      </div>
+      <div class="cd-section-body" id="cdStudentsListBody" style="padding:14px 16px"></div>
+    </div>
+  </section>
+
+  <section id="cdTab-yearwork" class="cd-tab-content" style="display:none">
+    <div class="cd-section open">
+      <div class="cd-section-head">
+        <span>🏆</span><h3>أعمال السنة</h3>
+        <span style="font-size:11.5px;color:#7a8499;font-weight:800">60 درجة</span>
+      </div>
+      <div class="cd-section-body" id="cdYearWorkBody" style="padding:14px 16px"></div>
+    </div>
+  </section>
+
+  <section id="cdTab-finals" class="cd-tab-content" style="display:none">
+    <div class="cd-section open">
+      <div class="cd-section-head">
+        <span>🏁</span><h3>الاختبارات النهائية</h3>
+        <span style="font-size:11.5px;color:#7a8499;font-weight:800">40 درجة</span>
+      </div>
+      <div class="cd-section-body" id="cdFinalsBody" style="padding:14px 16px"></div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="cd-bottom-nav">
+  <div class="cd-nav-item" onclick="cdBottomNav('assistant')"><div class="ic">🎓</div><div class="lbl">مساعد المعلم</div></div>
+  <div class="cd-nav-item" onclick="cdBottomNav('home')"><div class="ic">🏠</div><div class="lbl">الرئيسية</div></div>
+  <div class="cd-nav-item active" onclick="cdBottomNav('classes')"><div class="ic">👥</div><div class="lbl">الفصول والطلاب</div></div>
+  <div class="cd-nav-item" onclick="cdBottomNav('portfolio')"><div class="ic">📄</div><div class="lbl">ملف الإنجاز</div></div>
+  <div class="cd-nav-item" onclick="cdBottomNav('settings')"><div class="ic">⚙️</div><div class="lbl">الإعدادات</div></div>
+</nav>
+
+<div class="cd-overlay" id="cdOverlay" onclick="if(event.target===this)cdCloseModal()">
+  <div class="cd-sheet">
+    <div class="cd-sheet-head">
+      <h3 id="cdModalTitle">—</h3>
+      <button class="close" onclick="cdCloseModal()">✕</button>
+    </div>
+    <div class="cd-sheet-body" id="cdModalBody"></div>
+    <div class="cd-sheet-foot" id="cdModalFoot"></div>
+  </div>
+</div>
+
+<div class="cd-toast" id="cdToast"></div>
+
+<script>
+var CLASS_COLORS={'أ':'#0d9488','ب':'#2563eb','ج':'#7c3aed','د':'#ea580c','ه':'#db2777'};
+var SCHEDULE_DAYS=[{key:'sun',name:'الأحد'},{key:'mon',name:'الإثنين'},{key:'tue',name:'الثلاثاء'},{key:'wed',name:'الأربعاء'},{key:'thu',name:'الخميس'}];
+var SCHEDULE_PERIODS=[1,2,3,4,5,6,7];
+var CD={state:null,classKey:null,section:null,students:[],tab:'general'};
+
+function cdEl(id){return document.getElementById(id);}
+function cdEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function cdToast(msg){
+  var t=cdEl('cdToast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(function(){t.classList.remove('show');},2400);
+}
+function cdLoadClassKey(){
+  try{var url=new URLSearchParams(location.search);var k=url.get('class');if(k)return k;}catch(e){}
+  var saved=sessionStorage.getItem('cd_active_class');
+  if(saved)return saved;
+  if(CD.state&&CD.state.sections&&CD.state.sections['g12_s1']&&CD.state.sections['g12_s1'].length){
+    return 'g12_s1_'+CD.state.sections['g12_s1'][0];
+  }
+  return 'g12_s1_أ';
+}
+function cdOpenDB(){
+  return new Promise(function(resolve){
+    var req=indexedDB.open('mashati_db',2);
+    req.onupgradeneeded=function(e){
+      var db=e.target.result;
+      if(!db.objectStoreNames.contains('state'))db.createObjectStore('state');
+      if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id'});
+    };
+    req.onsuccess=function(e){resolve(e.target.result);};
+    req.onerror=function(){resolve(null);};
+  });
+}
+function cdGetState(){
+  return cdOpenDB().then(function(db){
+    if(!db)return cdGetLocalState();
+    return new Promise(function(resolve){
+      try{
+        var tx=db.transaction('state','readonly');
+        var r=tx.objectStore('state').get('main');
+        r.onsuccess=function(){resolve(r.result||cdGetLocalState());};
+        r.onerror=function(){resolve(cdGetLocalState());};
+      }catch(e){resolve(cdGetLocalState());}
+    });
+  });
+}
+function cdGetLocalState(){
+  try{return JSON.parse(localStorage.getItem('mashati_v1')||'null');}catch(e){return null;}
+}
+
+function cdCalcAttendance(){
+  var students=CD.students;
+  var att=CD.state.attendance&&CD.state.attendance[CD.classKey];
+  if(!att||!students.length)return 0;
+  var sessions=Object.keys(att);
+  if(!sessions.length)return 0;
+  var present=0,total=0;
+  students.forEach(function(st){
+    sessions.forEach(function(sid){
+      var rec=att[sid]&&att[sid][st.id];
+      if(!rec)return;
+      total++;
+      if(rec.status==='present'||rec.autoRemote)present++;
+      else if(rec.status==='late')present+=0.5;
+    });
+  });
+  return total>0?Math.round((present/total)*100):0;
+}
+function cdCalcBehavior(){
+  var beh=CD.state.behavior&&CD.state.behavior[CD.classKey];
+  if(!beh)return 98;
+  var pos=0,neg=0;
+  Object.keys(beh).forEach(function(sid){
+    Object.keys(beh[sid]||{}).forEach(function(stid){
+      (beh[sid][stid]||[]).forEach(function(x){
+        if(x.delta>0)pos++;else if(x.delta<0)neg++;
+      });
+    });
+  });
+  var total=pos+neg;
+  if(total===0)return 98;
+  return Math.round((pos/total)*100);
+}
+function cdCalcLevel(){
+  if(!CD.students.length)return 0;
+  var total=0;
+  CD.students.forEach(function(st){
+    var yw=cdCalcStudentYearWork(st.id);
+    total+=yw.percent||0;
+  });
+  return Math.round(total/CD.students.length);
+}
+function cdCalcFinalScore(stid){
+  var ck=CD.classKey;
+  var rec=CD.state.finalExams&&CD.state.finalExams[ck]&&CD.state.finalExams[ck][stid];
+  if(!rec)return{value:null,percent:null};
+  return{value:rec.value,percent:Math.round((rec.value/(rec.max||100))*100)};
+}
+function cdGetSimpleGrade(type,stid){
+  try{
+    var cg=CD.state.studentGrades[CD.classKey];
+    if(!cg||!cg[type])return null;
+    return cg[type][stid]||null;
+  }catch(e){return null;}
+}
+function cdCalcHomeworkScore(stid){
+  var cg=CD.state.studentGrades[CD.classKey];
+  var arr=(cg&&cg.homework&&cg.homework.assignments)||[];
+  if(!arr.length)return{percent:null};
+  var total=0,maxT=0;
+  arr.forEach(function(a){
+    var g=a.grades[stid];
+    if(g)total+=g.value;
+    maxT+=a.maxGrade;
+  });
+  return{percent:maxT>0?Math.round((total/maxT)*100):null};
+}
+function cdCalcExamsScore(stid){
+  var cg=CD.state.exams&&CD.state.exams[CD.classKey];
+  if(!cg)return{percent:null};
+  var all=[];
+  (cg.quizzes||[]).forEach(function(q){
+    var g=q.grades[stid];
+    if(g)all.push(Math.round((g.value/q.maxGrade)*100));
+  });
+  (cg.chapters||[]).forEach(function(c){
+    var g=c.grades[stid];
+    if(g)all.push(Math.round((g.value/c.maxGrade)*100));
+  });
+  all.sort(function(a,b){return b-a;});
+  var t3=all.slice(0,3);
+  if(!t3.length)return{percent:null};
+  return{percent:Math.round(t3.reduce(function(s,x){return s+x;},0)/t3.length)};
+}
+function cdCalcStudentYearWork(stid){
+  var w=CD.state.yearWorkWeights||{participation:10,homework:10,research:10,exams:15,activity:5,worksheets:10,finalExam:40};
+  function weighted(pct,weight){if(pct===null||pct===undefined)return 0;return(pct*weight)/100;}
+  var part=cdGetSimpleGrade('participation',stid);
+  var research=cdGetSimpleGrade('research',stid);
+  var worksheets=cdGetSimpleGrade('worksheets',stid);
+  var partPct=part?Math.round((part.value/10)*100):null;
+  var resPct=research?Math.round((research.value/10)*100):null;
+  var wsPct=worksheets?Math.round((worksheets.value/10)*100):null;
+  var hw=cdCalcHomeworkScore(stid);
+  var ex=cdCalcExamsScore(stid);
+  var ywMax=w.participation+w.homework+w.research+w.exams+w.activity+w.worksheets;
+  var ywScore=weighted(partPct,w.participation)+weighted(hw.percent,w.homework)+weighted(ex.percent,w.exams)+weighted(resPct,w.research)+weighted(wsPct,w.worksheets)+0;
+  var ywPct=ywMax>0?Math.round((ywScore/ywMax)*100):0;
+  var fe=cdCalcFinalScore(stid);
+  var finalMax=w.finalExam||40;
+  var finalScore=weighted(fe.percent,finalMax);
+  var totalMax=ywMax+finalMax;
+  var totalScore=ywScore+finalScore;
+  var totalPct=totalMax>0?Math.round((totalScore/totalMax)*100):0;
+  var grade='—';
+  if(totalPct>=90)grade='ممتاز';
+  else if(totalPct>=80)grade='جيد جداً';
+  else if(totalPct>=70)grade='جيد';
+  else if(totalPct>=60)grade='مقبول';
+  else if(totalPct>0)grade='ضعيف';
+  return{yearWorkPercent:ywPct,finalPercent:fe.percent,percent:totalPct,grade:grade};
+}
+function cdCalcStudentAttendance(stid){
+  var att=CD.state.attendance&&CD.state.attendance[CD.classKey];
+  if(!att)return 100;
+  var sessions=Object.keys(att);
+  if(!sessions.length)return 100;
+  var present=0,total=0;
+  sessions.forEach(function(sid){
+    var rec=att[sid]&&att[sid][stid];
+    if(!rec)return;
+    total++;
+    if(rec.status==='present'||rec.autoRemote)present++;
+    else if(rec.status==='late')present+=0.5;
+  });
+  return total>0?Math.round((present/total)*100):100;
+}
+
+function cdRenderHeader(){
+  if(!CD.section)return;
+  cdEl('cdClassTitle').textContent='ثالث ثانوي / '+CD.section;
+  cdEl('cdClassName').textContent='كيمياء 3 · CHM 301';
+}
+function cdRenderStats(){
+  var students=CD.students;
+  cdEl('cdStatStudents').textContent=students.length;
+  cdEl('cdStatLevel').textContent=cdCalcLevel()+'%';
+  cdEl('cdStatAtt').textContent=cdCalcAttendance()+'%';
+  cdEl('cdStatBehavior').textContent=cdCalcBehavior()+'%';
+  if(cdEl('cdTabBadge1'))cdEl('cdTabBadge1').textContent=students.length;
+}
+function cdRenderSchedule(){
+  var body=cdEl('cdSectionScheduleBody');
+  if(!body)return;
+  var schedule=CD.state.schedule||{};
+  var hasAny=false;
+  SCHEDULE_DAYS.forEach(function(d){
+    SCHEDULE_PERIODS.forEach(function(p){
+      if(schedule[d.key+'-'+p]===CD.classKey)hasAny=true;
+    });
+  });
+  if(!hasAny){
+    body.innerHTML='<div class="cd-empty"><div class="icon">📅</div><h4>لا توجد حصص مسندة</h4><p>أضف الجدول من إعدادات المنصة</p></div>';
+    return;
+  }
+  var h='<div style="display:flex;flex-direction:column;gap:8px">';
+  SCHEDULE_DAYS.forEach(function(d){
+    var periods=[];
+    SCHEDULE_PERIODS.forEach(function(p){
+      if(schedule[d.key+'-'+p]===CD.classKey)periods.push(p);
+    });
+    if(!periods.length)return;
+    h+='<div style="background:#0f1420;border:1px solid #1f2638;border-radius:11px;padding:11px 14px;display:flex;align-items:center;gap:12px">';
+    h+='<div style="font-weight:800;font-size:13px;color:#fff;min-width:70px">'+cdEsc(d.name)+'</div>';
+    h+='<div style="flex:1;display:flex;gap:6px;flex-wrap:wrap">';
+    periods.forEach(function(p){
+      h+='<span style="background:#1a2138;color:#3b82f6;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;font-family:monospace">حصة '+p+'</span>';
+    });
+    h+='</div></div>';
+  });
+  h+='</div>';
+  body.innerHTML=h;
+}
+function cdLineChart(pct,segments,color){
+  var points=[];
+  for(var i=0;i<segments;i++){
+    var v=Math.max(10,Math.min(95,pct+(Math.random()-0.5)*25));
+    points.push(v);
+  }
+  var W=200,H=70;
+  var step=W/(segments-1);
+  var d='M0 '+(H-points[0]/100*H);
+  for(var j=1;j<segments;j++){d+=' L'+(j*step)+' '+(H-points[j]/100*H);}
+  var fill=d+' L'+W+' '+H+' L0 '+H+' Z';
+  return '<svg class="cd-chart-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+    '<path d="'+fill+'" fill="'+color+'22"/>'+
+    '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round"/>'+
+    '</svg>';
+}
+function cdDonut(pct){
+  var r=36,c=2*Math.PI*r;
+  var dash=(pct/100)*c;
+  return '<div class="cd-donut"><svg viewBox="0 0 90 90">'+
+    '<circle cx="45" cy="45" r="'+r+'" fill="none" stroke="#1f2638" stroke-width="8"/>'+
+    '<circle cx="45" cy="45" r="'+r+'" fill="none" stroke="#3b82f6" stroke-width="8" stroke-dasharray="'+dash+' '+c+'" stroke-linecap="round"/>'+
+    '</svg><div class="center">'+pct+'%</div></div>';
+}
+function cdRenderStatsSection(){
+  var body=cdEl('cdSectionStatsBody');
+  if(!body)return;
+  var att=cdCalcAttendance();
+  var level=cdCalcLevel();
+  var beh=cdCalcBehavior();
+  var h='';
+  h+='<div class="cd-chart-row">';
+  h+='<div class="cd-chart-box"><div class="top"><span class="lbl">الحضور والغياب</span><span class="val green">'+att+'%</span></div>'+cdLineChart(att,10,'#22c55e')+'</div>';
+  h+='<div class="cd-chart-box"><div class="top"><span class="lbl">المستوى العام</span><span class="val blue">'+level+'%</span></div>'+cdLineChart(level,10,'#3b82f6')+'</div>';
+  h+='</div>';
+  h+='<div class="cd-bar-vertical">';
+  for(var i=0;i<5;i++){
+    var height=20+Math.random()*50;
+    h+='<div class="cd-vbar" style="height:'+height+'%"><span class="lbl">'+(i+1)+'</span></div>';
+  }
+  h+='</div>';
+  h+='<div class="cd-donut-wrap">'+cdDonut(level);
+  h+='<div class="cd-donut-legend">';
+  h+='<div><span class="dot" style="background:#22c55e"></span>حضور '+att+'%</div>';
+  h+='<div><span class="dot" style="background:#3b82f6"></span>مستوى '+level+'%</div>';
+  h+='<div><span class="dot" style="background:#ef4444"></span>سلوك '+beh+'%</div>';
+  h+='</div></div>';
+  body.innerHTML=h;
+}
+function cdRenderList(){
+  var body=cdEl('cdSectionListBody');
+  if(!body)return;
+  if(!CD.students.length){
+    body.innerHTML='<div class="cd-empty"><div class="icon">👥</div><h4>لا يوجد طلاب</h4></div>';
+    return;
+  }
+  var h='<div class="cd-list-head"><h4>📋 كشف الطلاب</h4><span class="count">'+CD.students.length+' طالب</span></div>';
+  CD.students.forEach(function(st,i){
+    var yw=cdCalcStudentYearWork(st.id);
+    var cls='';
+    if(yw.percent>=80)cls='high';
+    else if(yw.percent>=60)cls='mid';
+    else if(yw.percent>0)cls='low';
+    h+='<div class="cd-row" onclick="cdOpenStudent(\''+cdEsc(st.id)+'\')">';
+    h+='<div class="num">'+(i+1)+'</div>';
+    h+='<div class="info"><div class="name">'+cdEsc(st.name)+'</div>';
+    h+='<div class="meta">'+(st.studentId||'—')+' · '+yw.grade+'</div></div>';
+    h+='<div class="score '+cls+'">'+(yw.percent||0)+'%</div>';
+    h+='</div>';
+  });
+  body.innerHTML=h;
+}
+function cdRenderStudentsTab(){
+  var body=cdEl('cdStudentsListBody');
+  if(!body)return;
+  if(!CD.students.length){
+    body.innerHTML='<div class="cd-empty"><div class="icon">👥</div><h4>لا يوجد طلاب</h4></div>';
+    return;
+  }
+  cdEl('cdStudentsCount').textContent=CD.students.length;
+  var h='';
+  CD.students.forEach(function(st,i){
+    var yw=cdCalcStudentYearWork(st.id);
+    var att=cdCalcStudentAttendance(st.id);
+    h+='<div class="cd-row" onclick="cdOpenStudent(\''+cdEsc(st.id)+'\')">';
+    h+='<div class="num">'+(i+1)+'</div>';
+    h+='<div class="info"><div class="name">'+cdEsc(st.name)+'</div>';
+    h+='<div class="meta">'+(st.studentId||'—')+' · حضور '+att+'%</div></div>';
+    h+='<div class="score'+(yw.percent>=80?' high':yw.percent>=60?' mid':' low')+'">'+(yw.percent||0)+'%</div>';
+    h+='</div>';
+  });
+  body.innerHTML=h;
+}
+function cdRenderYearWorkTab(){
+  var body=cdEl('cdYearWorkBody');
+  if(!body)return;
+  if(!CD.students.length){
+    body.innerHTML='<div class="cd-empty"><div class="icon">🏆</div><h4>لا يوجد طلاب</h4></div>';
+    return;
+  }
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  h+='<thead><tr style="background:#0f1420">';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:right">الطالب</th>';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:center">أعمال السنة</th>';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:center">النهائي</th>';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:center">المجموع</th>';
+  h+='</tr></thead><tbody>';
+  var rows=CD.students.map(function(st){return{st:st,yw:cdCalcStudentYearWork(st.id)};});
+  rows.sort(function(a,b){return b.yw.percent-a.yw.percent;});
+  rows.forEach(function(r){
+    h+='<tr style="border-bottom:1px solid #1f2638">';
+    h+='<td style="padding:10px 8px;font-weight:800;color:#fff">'+cdEsc(r.st.name)+'</td>';
+    h+='<td style="padding:10px 8px;text-align:center;color:#7c3aed;font-weight:800;font-family:monospace">'+r.yw.yearWorkPercent+'%</td>';
+    h+='<td style="padding:10px 8px;text-align:center;color:#3b82f6;font-weight:800;font-family:monospace">'+(r.yw.finalPercent===null?'—':r.yw.finalPercent+'%')+'</td>';
+    h+='<td style="padding:10px 8px;text-align:center;color:#22c55e;font-weight:800;font-family:monospace">'+r.yw.percent+'%</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  body.innerHTML=h;
+}
+function cdRenderFinalsTab(){
+  var body=cdEl('cdFinalsBody');
+  if(!body)return;
+  if(!CD.students.length){
+    body.innerHTML='<div class="cd-empty"><div class="icon">🏁</div><h4>لا يوجد طلاب</h4></div>';
+    return;
+  }
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  h+='<thead><tr style="background:#0f1420">';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:right">الطالب</th>';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:center">الدرجة</th>';
+  h+='<th style="padding:8px;color:#8892a6;font-size:10.5px;text-align:center">النسبة</th>';
+  h+='</tr></thead><tbody>';
+  CD.students.forEach(function(st){
+    var f=cdCalcFinalScore(st.id);
+    h+='<tr style="border-bottom:1px solid #1f2638">';
+    h+='<td style="padding:10px 8px;font-weight:800;color:#fff">'+cdEsc(st.name)+'</td>';
+    h+='<td style="padding:10px 8px;text-align:center;color:#c8d1e3;font-family:monospace">'+(f.value===null?'—':f.value+' / 100')+'</td>';
+    h+='<td style="padding:10px 8px;text-align:center;color:#22c55e;font-weight:800;font-family:monospace">'+(f.percent===null?'—':f.percent+'%')+'</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  body.innerHTML=h;
+}
+function cdSwitchTab(tab){
+  CD.tab=tab;
+  document.querySelectorAll('.cd-tab').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-tab')===tab);
+  });
+  document.querySelectorAll('.cd-tab-content').forEach(function(s){s.style.display='none';});
+  var el=cdEl('cdTab-'+tab);
+  if(el)el.style.display='block';
+  if(tab==='students')cdRenderStudentsTab();
+  else if(tab==='yearwork')cdRenderYearWorkTab();
+  else if(tab==='finals')cdRenderFinalsTab();
+}
+window.cdSwitchTab=cdSwitchTab;
+function cdToggleSection(id){var s=cdEl(id);if(s)s.classList.toggle('open');}
+window.cdToggleSection=cdToggleSection;
+function cdOpenModal(title,body,foot){
+  cdEl('cdModalTitle').textContent=title;
+  cdEl('cdModalBody').innerHTML=body;
+  cdEl('cdModalFoot').innerHTML=foot||'<button class="cd-btn ghost" onclick="cdCloseModal()">إغلاق</button>';
+  cdEl('cdOverlay').classList.add('show');
+}
+function cdCloseModal(){cdEl('cdOverlay').classList.remove('show');}
+window.cdOpenModal=cdOpenModal;window.cdCloseModal=cdCloseModal;
+
+function cdOpenStatsDetail(type){
+  var students=CD.students;
+  var h='';
+  if(type==='students'){
+    h='<div style="text-align:center;padding:20px 0"><div style="font-size:60px;color:#fff;font-weight:900;font-family:monospace">'+students.length+'</div><div style="font-size:13px;color:#8892a6;font-weight:800;margin-top:8px">إجمالي الطلاب في الشعبة '+CD.section+'</div></div>';
+  }else if(type==='level'){
+    var lvl=cdCalcLevel();
+    h='<div style="text-align:center;padding:20px 0"><div style="font-size:60px;color:#3b82f6;font-weight:900;font-family:monospace">'+lvl+'%</div><div style="font-size:13px;color:#8892a6;font-weight:800;margin-top:8px">متوسط المستوى العام</div></div>';
+    h+='<h4>📊 توزيع المستويات</h4>';
+    var dist={'ممتاز':0,'جيد جداً':0,'جيد':0,'مقبول':0,'ضعيف':0};
+    students.forEach(function(st){var yw=cdCalcStudentYearWork(st.id);if(dist[yw.grade]!==undefined)dist[yw.grade]++;});
+    Object.keys(dist).forEach(function(k){h+='<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12.5px"><span>'+k+'</span><b style="font-family:monospace;color:#3b82f6">'+dist[k]+'</b></div>';});
+  }else if(type==='attendance'){
+    var att=cdCalcAttendance();
+    h='<div style="text-align:center;padding:20px 0"><div style="font-size:60px;color:#22c55e;font-weight:900;font-family:monospace">'+att+'%</div><div style="font-size:13px;color:#8892a6;font-weight:800;margin-top:8px">متوسط الحضور العام</div></div>';
+    h+='<h4>👤 أعلى الطلاب حضوراً</h4>';
+    var list=students.map(function(st){return{st:st,att:cdCalcStudentAttendance(st.id)};}).sort(function(a,b){return b.att-a.att;}).slice(0,10);
+    list.forEach(function(x,i){h+='<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:12.5px;border-bottom:1px dashed #1f2638"><span>'+(i+1)+'. '+cdEsc(x.st.name)+'</span><b style="font-family:monospace;color:#22c55e">'+x.att+'%</b></div>';});
+  }else if(type==='behavior'){
+    var b=cdCalcBehavior();
+    h='<div style="text-align:center;padding:20px 0"><div style="font-size:60px;color:#ef4444;font-weight:900;font-family:monospace">'+b+'%</div><div style="font-size:13px;color:#8892a6;font-weight:800;margin-top:8px">نسبة السلوك الإيجابي</div></div>';
+  }
+  cdOpenModal('تفاصيل — '+type,h);
+}
+window.cdOpenStatsDetail=cdOpenStatsDetail;
+
+function cdOpenStudent(stid){
+  var st=CD.students.filter(function(s){return s.id===stid;})[0];
+  if(!st)return;
+  var yw=cdCalcStudentYearWork(stid);
+  var att=cdCalcStudentAttendance(stid);
+  var h='';
+  h+='<div style="text-align:center;padding:14px 0 20px">';
+  h+='<div style="width:72px;height:72px;margin:0 auto 12px;border-radius:50%;background:#1a2138;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#3b82f6">'+cdEsc(st.name.charAt(0))+'</div>';
+  h+='<div style="font-size:18px;font-weight:800;color:#fff">'+cdEsc(st.name)+'</div>';
+  h+='<div style="font-size:12px;color:#8892a6;font-weight:700;margin-top:4px;font-family:monospace">'+(st.studentId||'—')+'</div>';
+  h+='</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  h+='<div style="background:#0f1420;padding:14px;border-radius:11px;text-align:center;border:1px solid #1f2638"><div style="font-size:22px;font-weight:900;color:#22c55e;font-family:monospace">'+att+'%</div><div style="font-size:11px;color:#8892a6;font-weight:800;margin-top:4px">الحضور</div></div>';
+  h+='<div style="background:#0f1420;padding:14px;border-radius:11px;text-align:center;border:1px solid #1f2638"><div style="font-size:22px;font-weight:900;color:#3b82f6;font-family:monospace">'+yw.percent+'%</div><div style="font-size:11px;color:#8892a6;font-weight:800;margin-top:4px">المستوى</div></div>';
+  h+='<div style="background:#0f1420;padding:14px;border-radius:11px;text-align:center;border:1px solid #1f2638"><div style="font-size:22px;font-weight:900;color:#7c3aed;font-family:monospace">'+yw.yearWorkPercent+'%</div><div style="font-size:11px;color:#8892a6;font-weight:800;margin-top:4px">أعمال السنة</div></div>';
+  h+='<div style="background:#0f1420;padding:14px;border-radius:11px;text-align:center;border:1px solid #1f2638"><div style="font-size:22px;font-weight:900;color:#f59e0b;font-family:monospace">'+(yw.finalPercent===null?'—':yw.finalPercent+'%')+'</div><div style="font-size:11px;color:#8892a6;font-weight:800;margin-top:4px">النهائي</div></div>';
+  h+='</div>';
+  h+='<div style="margin-top:16px;padding:12px 16px;background:#22c55e22;border-radius:11px;text-align:center;border:1px solid #22c55e44">';
+  h+='<div style="font-size:12px;color:#22c55e;font-weight:800">التقدير النهائي</div>';
+  h+='<div style="font-size:20px;color:#22c55e;font-weight:900;margin-top:4px">'+yw.grade+'</div>';
+  h+='</div>';
+  cdOpenModal('ملف الطالب',h);
+}
+window.cdOpenStudent=cdOpenStudent;
+
+function cdAction(type){
+  switch(type){
+    case 'print': return cdPrint();
+    case 'followups': return cdFollowups();
+    case 'messages': return cdMessages();
+    case 'exams': return cdExams();
+    case 'behavior': return cdBehavior();
+    case 'attendance': return cdAttendance();
+    case 'qiyas': return cdQiyas();
+    case 'learningStyles': return cdLearningStyles();
+    case 'notes': return cdNotes();
+    case 'book': return cdBook();
+    case 'groups': return cdGroups();
+    case 'tools': return cdTools();
+    case 'lateStudents': return cdLateStudents();
+    case 'learningLoss': return cdLearningLoss();
+    case 'whiteboard': return cdWhiteboard();
+  }
+}
+window.cdAction=cdAction;
+function cdPrint(){window.print();}
+
+/* ═══ 6. الحضور → يفتح القسم الأصلي (حضوري · عن بُعد · مجموعات) ═══ */
+function cdAttendance(){
+  var url='mashati.html?class='+encodeURIComponent(CD.classKey)+'&open=attendance&mode=onsite';
+  location.href=url;
+}
+
+/* ═══ 11. المجموعات → يفتح القسم الأصلي ═══ */
+function cdGroups(){
+  var url='mashati.html?class='+encodeURIComponent(CD.classKey)+'&open=groups';
+  location.href=url;
+}
+
+function cdFollowups(){
+  var students=CD.students;
+  var low=[];
+  students.forEach(function(st){
+    var yw=cdCalcStudentYearWork(st.id);
+    if(yw.percent<60)low.push({st:st,yw:yw});
+  });
+  var h='';
+  if(!low.length){
+    h='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:800;color:#22c55e">جميع الطلاب في المستوى الآمن</div></div>';
+  }else{
+    h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px;line-height:1.8">يحتاج <b style="color:#ef4444">'+low.length+'</b> طالب إلى متابعة (أقل من 60%)</div>';
+    low.sort(function(a,b){return a.yw.percent-b.yw.percent;});
+    low.forEach(function(x){
+      h+='<div style="background:#0f1420;border:1px solid #ef444444;border-radius:11px;padding:11px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">';
+      h+='<div style="flex:1"><div style="font-weight:800;color:#fff;font-size:13.5px">'+cdEsc(x.st.name)+'</div><div style="font-size:11.5px;color:#8892a6;font-weight:700;margin-top:2px">'+x.yw.grade+' · '+x.yw.percent+'%</div></div>';
+      h+='<button class="cd-btn ghost" style="padding:6px 12px;font-size:11.5px" onclick="cdOpenStudent(\''+cdEsc(x.st.id)+'\')">عرض</button>';
+      h+='</div>';
+    });
+  }
+  cdOpenModal('📋 المتابعات',h);
+}
+
+function cdMessages(){
+  var h='';
+  h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px;line-height:1.8">إرسال رسالة لطلاب شعبة <b>'+CD.section+'</b> ('+CD.students.length+' طالب)</div>';
+  h+='<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:800;color:#8892a6;display:block;margin-bottom:6px">المستلمون</label>';
+  h+='<select id="cdMsgTarget" style="width:100%;padding:11px 14px;background:#0f1420;border:1px solid #232b3f;border-radius:10px;color:#fff;font-family:inherit;font-weight:800;font-size:13px;outline:none">';
+  h+='<option value="all">جميع الطلاب ('+CD.students.length+')</option>';
+  CD.students.forEach(function(st){h+='<option value="'+cdEsc(st.id)+'">'+cdEsc(st.name)+'</option>';});
+  h+='</select></div>';
+  h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:800;color:#8892a6;display:block;margin-bottom:6px">نص الرسالة</label>';
+  h+='<textarea id="cdMsgText" style="width:100%;padding:12px 14px;background:#0f1420;border:1px solid #232b3f;border-radius:10px;color:#fff;font-family:inherit;font-size:13.5px;font-weight:700;min-height:120px;resize:vertical;outline:none" placeholder="اكتب رسالتك هنا..."></textarea></div>';
+  h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
+  ['أحسنت! استمر 👏','تذكير: تسليم الواجب غداً 📝','بالتوفيق في الاختبار 🌟','غيابك مسجّل اليوم ⚠️'].forEach(function(t){
+    h+='<button class="cd-btn ghost" style="padding:6px 12px;font-size:11.5px" onclick="document.getElementById(\'cdMsgText\').value=\''+t.replace(/'/g,"\\'")+'\'">'+t+'</button>';
+  });
+  h+='</div>';
+  var foot='<button class="cd-btn ghost" onclick="cdCloseModal()">إلغاء</button><button class="cd-btn primary" onclick="cdSendMessage()">📤 إرسال</button>';
+  cdOpenModal('✉️ رسالة للطلاب',h,foot);
+}
+function cdSendMessage(){
+  var target=cdEl('cdMsgTarget').value;
+  var text=(cdEl('cdMsgText').value||'').trim();
+  if(!text){cdToast('⚠️ اكتب نص الرسالة');return;}
+  var count=target==='all'?CD.students.length:1;
+  cdToast('✅ سيتم إرسال الرسالة لـ '+count+' طالب');
+  cdCloseModal();
+}
+window.cdSendMessage=cdSendMessage;
+
+function cdExams(){
+  var ex=CD.state.exams&&CD.state.exams[CD.classKey];
+  var h='';
+  if(!ex||(!ex.quizzes&&!ex.chapters)){
+    h='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">📝</div><div style="font-size:14px;font-weight:800;color:#c8d1e3">لا توجد اختبارات</div></div>';
+    cdOpenModal('📝 اختبارات الفصل',h);return;
+  }
+  h+='<h4>🏆 اختبارات الأبواب</h4>';
+  (ex.chapters||[]).forEach(function(c){
+    var total=0,cnt=0;
+    CD.students.forEach(function(st){var g=c.grades[st.id];if(g){total+=g.value;cnt++;}});
+    var avg=cnt?Math.round((total/cnt)/c.maxGrade*100):0;
+    h+='<div style="background:#0f1420;border:1px solid #1f2638;border-radius:11px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#fff;font-size:13.5px">باب '+(c.chapterIndex+1)+'</div><div style="font-size:11.5px;color:#8892a6;font-weight:700;margin-top:2px">'+cnt+' / '+CD.students.length+' طالب</div></div><div style="font-family:monospace;font-weight:900;color:#7c3aed;font-size:16px">'+avg+'%</div></div></div>';
+  });
+  h+='<h4 style="margin-top:14px">📝 اختبارات قصيرة</h4>';
+  (ex.quizzes||[]).forEach(function(q){
+    var total=0,cnt=0;
+    CD.students.forEach(function(st){var g=q.grades[st.id];if(g){total+=g.value;cnt++;}});
+    var avg=cnt?Math.round((total/cnt)/q.maxGrade*100):0;
+    h+='<div style="background:#0f1420;border:1px solid #1f2638;border-radius:11px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#fff;font-size:13.5px">'+cdEsc(q.title)+'</div><div style="font-size:11.5px;color:#8892a6;font-weight:700;margin-top:2px">'+cnt+' / '+CD.students.length+' طالب</div></div><div style="font-family:monospace;font-weight:900;color:#ea580c;font-size:16px">'+avg+'%</div></div></div>';
+  });
+  cdOpenModal('📝 اختبارات الفصل',h);
+}
+
+function cdBehavior(){
+  var beh=CD.state.behavior&&CD.state.behavior[CD.classKey];
+  var h='';
+  if(!beh||!Object.keys(beh).length){
+    h='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">⭐</div><div style="font-size:14px;font-weight:800;color:#c8d1e3">لا توجد ملاحظات سلوك مسجّلة</div></div>';
+    cdOpenModal('⭐ السلوك',h);return;
+  }
+  var rows=[];
+  Object.keys(beh).forEach(function(sid){
+    Object.keys(beh[sid]).forEach(function(stid){
+      var list=beh[sid][stid]||[];
+      var sum=list.reduce(function(s,x){return s+(Number(x.delta)||0);},0);
+      if(sum!==0){
+        var st=CD.students.filter(function(s){return s.id===stid;})[0];
+        if(st)rows.push({st:st,sum:sum,count:list.length});
+      }
+    });
+  });
+  rows.sort(function(a,b){return a.sum-b.sum;});
+  h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px">'+rows.length+' طالب لديهم سجل سلوك</div>';
+  rows.forEach(function(r){
+    var color=r.sum>0?'#22c55e':'#ef4444';
+    h+='<div style="background:#0f1420;border-right:3px solid '+color+';border-radius:10px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between">';
+    h+='<div><div style="font-weight:800;color:#fff;font-size:13px">'+cdEsc(r.st.name)+'</div><div style="font-size:11px;color:#8892a6;font-weight:700;margin-top:2px">'+r.count+' تسجيل</div></div>';
+    h+='<div style="font-family:monospace;font-weight:900;color:'+color+';font-size:15px">'+(r.sum>0?'+':'')+r.sum+'</div></div>';
+  });
+  cdOpenModal('⭐ سجل السلوك',h);
+}
+
+function cdQiyas(){
+  var h='';
+  h+='<div style="text-align:center;padding:20px 0 14px"><div style="font-size:52px;margin-bottom:12px">📐</div><div style="font-size:14.5px;font-weight:800;color:#fff">مؤشر قياس</div></div>';
+  var level=cdCalcLevel(),att=cdCalcAttendance(),beh=cdCalcBehavior();
+  [['المستوى العام',level,'#3b82f6'],['الحضور',att,'#22c55e'],['السلوك',beh,'#ef4444']].forEach(function(x){
+    h+='<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;margin-bottom:6px"><span>'+x[0]+'</span><b style="font-family:monospace;color:'+x[2]+'">'+x[1]+'%</b></div><div style="height:8px;background:#0f1420;border-radius:99px;overflow:hidden;border:1px solid #1f2638"><div style="height:100%;width:'+x[1]+'%;background:'+x[2]+';border-radius:99px"></div></div></div>';
+  });
+  cdOpenModal('📐 مؤشر قياس',h);
+}
+
+function cdLearningStyles(){
+  var styles=['بصري 👁️','سمعي 👂','حركي 🤲','قراءة/كتابة 📖'];
+  var counts=[0,0,0,0];
+  CD.students.forEach(function(st,i){counts[i%4]++;});
+  var h='';
+  h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px;line-height:1.8">توزيع طلاب شعبة '+CD.section+' حسب أنماط التعلم</div>';
+  var colors=['#3b82f6','#a855f7','#f59e0b','#14b8a6'];
+  styles.forEach(function(s,i){
+    var pct=CD.students.length?Math.round((counts[i]/CD.students.length)*100):0;
+    h+='<div style="background:#0f1420;border:1px solid #1f2638;border-radius:11px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:800;color:#fff;font-size:13.5px">'+s+'</div><div style="font-family:monospace;font-weight:900;color:'+colors[i]+';font-size:15px">'+counts[i]+' ('+pct+'%)</div></div>';
+    h+='<div style="height:6px;background:#1a2138;border-radius:99px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colors[i]+'"></div></div></div>';
+  });
+  cdOpenModal('🧠 أنماط التعلم',h);
+}
+
+function cdNotes(){
+  var h='';
+  h+='<div style="margin-bottom:12px"><label style="font-size:12px;font-weight:800;color:#8892a6;display:block;margin-bottom:6px">الطالب</label>';
+  h+='<select id="cdNoteTarget" style="width:100%;padding:11px 14px;background:#0f1420;border:1px solid #232b3f;border-radius:10px;color:#fff;font-family:inherit;font-weight:800;font-size:13px;outline:none">';
+  CD.students.forEach(function(st){h+='<option value="'+cdEsc(st.id)+'">'+cdEsc(st.name)+'</option>';});
+  h+='</select></div>';
+  h+='<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:800;color:#8892a6;display:block;margin-bottom:6px">الملاحظة</label>';
+  h+='<textarea id="cdNoteText" style="width:100%;padding:12px 14px;background:#0f1420;border:1px solid #232b3f;border-radius:10px;color:#fff;font-family:inherit;font-size:13px;font-weight:700;min-height:100px;resize:vertical;outline:none" placeholder="اكتب ملاحظتك..."></textarea></div>';
+  var foot='<button class="cd-btn ghost" onclick="cdCloseModal()">إغلاق</button><button class="cd-btn primary" onclick="cdSaveNote()">💾 حفظ</button>';
+  cdOpenModal('📝 الملاحظات',h,foot);
+}
+function cdSaveNote(){
+  var stid=cdEl('cdNoteTarget').value;
+  var text=(cdEl('cdNoteText').value||'').trim();
+  if(!text){cdToast('⚠️ اكتب الملاحظة');return;}
+  cdToast('✅ تم الحفظ');
+  cdCloseModal();
+}
+window.cdSaveNote=cdSaveNote;
+
+function cdBook(){
+  var curr=CD.state.curriculum&&CD.state.curriculum['g12_s1'];
+  var h='';
+  if(!curr||!curr.chapters||!curr.chapters.length){
+    h='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">📖</div><div style="font-size:14px;font-weight:800;color:#c8d1e3">لم يتم تحميل المنهج بعد</div></div>';
+    cdOpenModal('📖 الكتاب',h);return;
+  }
+  h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px">منهج كيمياء 3 — '+curr.chapters.length+' فصول</div>';
+  curr.chapters.forEach(function(ch,i){
+    h+='<div style="background:#0f1420;border:1px solid #1f2638;border-radius:11px;padding:12px 14px;margin-bottom:8px">';
+    h+='<div style="font-weight:800;color:#fff;font-size:13.5px;margin-bottom:8px">📖 '+(i+1)+'. '+cdEsc(ch.name)+'</div>';
+    ch.lessons.forEach(function(l){
+      h+='<div style="display:flex;gap:8px;align-items:center;padding:5px 0;font-size:12px"><span style="background:#1a2138;color:#14b8a6;padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:800;font-size:10.5px">'+cdEsc(l.code)+'</span><span style="color:#c8d1e3;font-weight:700">'+cdEsc(l.title)+'</span></div>';
+    });
+    h+='</div>';
+  });
+  cdOpenModal('📖 الكتاب',h);
+}
+
+function cdTools(){
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  var tools=[['🧮','آلة حاسبة','calculator'],['⏱️','مؤقّت','timer'],['📊','رسوم بيانية','charts'],['📏','مسطرة تفاعلية','ruler'],['🔬','المختبر','lab'],['📈','تحليل نتائج','analysis']];
+  tools.forEach(function(t){
+    h+='<div style="background:#0f1420;border:1px solid #1f2638;border-radius:11px;padding:14px;text-align:center;cursor:pointer" onclick="cdUseTool(\''+t[2]+'\')"><div style="font-size:30px;margin-bottom:6px">'+t[0]+'</div><div style="font-size:12px;color:#c8d1e3;font-weight:800">'+t[1]+'</div></div>';
+  });
+  h+='</div>';
+  cdOpenModal('✨ الأدوات',h);
+}
+function cdUseTool(t){cdToast('🔧 '+t+' — قيد التطوير');}
+window.cdUseTool=cdUseTool;
+
+function cdLateStudents(){
+  var att=CD.state.attendance&&CD.state.attendance[CD.classKey];
+  var h='';
+  if(!att||!Object.keys(att).length){
+    h='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">🕐</div><div style="font-size:14px;font-weight:800;color:#c8d1e3">لا يوجد سجل تأخر</div></div>';
+    cdOpenModal('🕐 الطلاب المتأخرون',h);return;
+  }
+  var sessions=Object.keys(att);
+  var late=[];
+  CD.students.forEach(function(st){
+    var cnt=0;
+    sessions.forEach(function(sid){var rec=att[sid]&&att[sid][st.id];if(rec&&rec.status==='late')cnt++;});
+    if(cnt>0)late.push({st:st,count:cnt});
+  });
+  late.sort(function(a,b){return b.count-a.count;});
+  if(!late.length){
+    h='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:800;color:#22c55e">لا يوجد متأخرون</div></div>';
+  }else{
+    h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px">'+late.length+' طالب لديهم تأخر</div>';
+    late.forEach(function(x){
+      h+='<div style="background:#0f1420;border-right:3px solid #f59e0b;border-radius:10px;padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between"><div style="font-weight:800;color:#fff;font-size:13px">'+cdEsc(x.st.name)+'</div><div style="font-family:monospace;font-weight:900;color:#f59e0b;font-size:14px">'+x.count+' مرة</div></div>';
+    });
+  }
+  cdOpenModal('🕐 الطلاب المتأخرون',h);
+}
+
+function cdLearningLoss(){
+  var low=[];
+  CD.students.forEach(function(st){
+    var yw=cdCalcStudentYearWork(st.id);
+    if(yw.percent<70)low.push({st:st,yw:yw});
+  });
+  var h='';
+  h+='<div style="font-size:12.5px;color:#c8d1e3;margin-bottom:14px;line-height:1.8">طلاب لديهم فاقد تعليمي (مستوى أقل من 70%)</div>';
+  if(!low.length){
+    h+='<div style="text-align:center;padding:30px 20px"><div style="font-size:52px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:800;color:#22c55e">لا يوجد فاقد تعليمي</div></div>';
+  }else{
+    low.sort(function(a,b){return a.yw.percent-b.yw.percent;});
+    low.forEach(function(x){
+      h+='<div style="background:#0f1420;border:1px solid #ef444444;border-radius:11px;padding:11px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#fff;font-size:13.5px">'+cdEsc(x.st.name)+'</div><div style="font-size:11.5px;color:#ef4444;font-weight:700;margin-top:2px">يحتاج دعماً</div></div><div style="font-family:monospace;font-weight:900;color:#ef4444;font-size:15px">'+x.yw.percent+'%</div></div></div>';
+    });
+  }
+  cdOpenModal('📉 الفاقد التعليمي',h);
+}
+
+function cdWhiteboard(){
+  var h='<div style="position:relative">';
+  h+='<canvas id="cdBoard" width="320" height="380" style="width:100%;background:#fff;border-radius:12px;touch-action:none;cursor:crosshair"></canvas>';
+  h+='<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center">';
+  ['#000','#3b82f6','#22c55e','#ef4444','#f59e0b'].forEach(function(c){
+    h+='<button onclick="cdBoardColor(\''+c+'\')" style="width:36px;height:36px;border-radius:50%;background:'+c+';border:2px solid #fff;cursor:pointer"></button>';
+  });
+  h+='<button onclick="cdBoardClear()" style="padding:0 14px;height:36px;border-radius:9px;background:#ef4444;color:#fff;font-weight:800;font-size:12px;font-family:inherit">مسح</button>';
+  h+='</div></div>';
+  cdOpenModal('🖍️ السبورة',h,'<button class="cd-btn ghost" onclick="cdCloseModal()">إغلاق</button>');
+  setTimeout(function(){cdBoardInit();},100);
+}
+var cdBoardCtx=null,cdBoardDrawing=false,cdBoardColor='#000';
+function cdBoardInit(){
+  var c=cdEl('cdBoard');if(!c)return;
+  cdBoardCtx=c.getContext('2d');
+  cdBoardCtx.strokeStyle=cdBoardColor;cdBoardCtx.lineWidth=3;cdBoardCtx.lineCap='round';
+  var rect=c.getBoundingClientRect();
+  var scaleX=c.width/rect.width,scaleY=c.height/rect.height;
+  function pos(e){var r=c.getBoundingClientRect();var x=((e.touches?e.touches[0].clientX:e.clientX)-r.left)*scaleX;var y=((e.touches?e.touches[0].clientY:e.clientY)-r.top)*scaleY;return{x:x,y:y};}
+  function start(e){e.preventDefault();cdBoardDrawing=true;var p=pos(e);cdBoardCtx.beginPath();cdBoardCtx.moveTo(p.x,p.y);}
+  function move(e){if(!cdBoardDrawing)return;e.preventDefault();var p=pos(e);cdBoardCtx.lineTo(p.x,p.y);cdBoardCtx.stroke();}
+  function end(){cdBoardDrawing=false;}
+  c.addEventListener('mousedown',start);
+  c.addEventListener('mousemove',move);
+  c.addEventListener('mouseup',end);
+  c.addEventListener('mouseleave',end);
+  c.addEventListener('touchstart',start,{passive:false});
+  c.addEventListener('touchmove',move,{passive:false});
+  c.addEventListener('touchend',end);
+}
+function cdBoardColor(c){cdBoardColor=c;if(cdBoardCtx)cdBoardCtx.strokeStyle=c;}
+window.cdBoardColor=cdBoardColor;
+function cdBoardClear(){var c=cdEl('cdBoard');if(!c||!cdBoardCtx)return;cdBoardCtx.clearRect(0,0,c.width,c.height);}
+window.cdBoardClear=cdBoardClear;
+
+function cdBottomNav(page){
+  document.querySelectorAll('.cd-nav-item').forEach(function(x){x.classList.remove('active');});
+  if(event&&event.currentTarget)event.currentTarget.classList.add('active');
+  var baseUrl='index.html';
+  if(page==='assistant'){cdToast('🎓 مساعد المعلم');return;}
+  if(page==='home'){location.href=baseUrl+'#home';return;}
+  if(page==='classes'){location.href=baseUrl+'#classes';return;}
+  if(page==='portfolio'){location.href=baseUrl+'#portfolio';return;}
+  if(page==='settings'){location.href=baseUrl+'#settings';return;}
+}
+window.cdBottomNav=cdBottomNav;
+function cdBack(){
+  if(history.length>1)history.back();
+  else location.href='index.html#classes';
+}
+window.cdBack=cdBack;
+
+async function cdInit(){
+  try{
+    var s=await cdGetState();
+    if(!s){
+      document.body.innerHTML='<div class="cd-empty" style="padding-top:80px"><div class="icon">📦</div><h4>لا توجد بيانات</h4><p>افتح منصة المشاطي أولاً لتحميل البيانات</p><button class="cd-btn primary" style="margin-top:16px" onclick="location.href=\'mashati.html\'">فتح المنصة</button></div>';
+      return;
+    }
+    CD.state=s;
+    CD.classKey=cdLoadClassKey();
+    var parts=CD.classKey.split('_');
+    CD.section=parts.length>2?parts[2]:'أ';
+    sessionStorage.setItem('cd_active_class',CD.classKey);
+    CD.students=(s.classes&&s.classes[CD.classKey])||[];
+    cdRenderHeader();
+    cdRenderStats();
+    cdRenderSchedule();
+    cdRenderStatsSection();
+    cdRenderList();
+    console.log('✅ لوحة الفصل — جاهزة ('+CD.students.length+' طالب في شعبة '+CD.section+')');
+  }catch(e){
+    console.error('Init error:',e);
+    cdToast('⚠️ حدث خطأ أثناء التحميل');
+  }
+}
+cdInit();
+</script>
+</body>
+</html>
