@@ -262,7 +262,10 @@ function cdSeed(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charC
 function cdRng(seed){return function(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};}
 function cdToday(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function cdUid(p){return (p||'id')+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);}
-function cdGoTo(open,extra){var url='index.html?class='+encodeURIComponent(CD.classKey)+'&open='+encodeURIComponent(open);if(extra)for(var k in extra){url+='&'+k+'='+encodeURIComponent(extra[k]);}location.href=url;}
+function cdGoTo(open,extra){
+  if(window.parent&&window.parent!==window){window.parent.postMessage({type:'mushati-assistant-open',open:open,extra:extra||{},classKey:CD.classKey},location.origin);return;}
+  var url='index.html?class='+encodeURIComponent(CD.classKey)+'&open='+encodeURIComponent(open);if(extra)for(var k in extra){url+='&'+k+'='+encodeURIComponent(extra[k]);}location.href=url;
+}
 window.cdGoTo=cdGoTo;
 
 function cdLoadClassKey(){
@@ -1611,6 +1614,7 @@ window.cdSelfTest=cdSelfTest;
 function cdBottomNav(page,el){
   document.querySelectorAll('.cd-nav-item').forEach(function(x){x.classList.remove('active');});
   if(el)el.classList.add('active');
+  if(window.parent&&window.parent!==window){window.parent.postMessage({type:'mushati-assistant-nav',page:page,classKey:CD.classKey},location.origin);return;}
   var baseUrl='index.html';
   if(page==='assistant'){location.href=baseUrl+'#assistant';return;}
   if(page==='home'){location.href=baseUrl+'#home';return;}
@@ -1619,7 +1623,7 @@ function cdBottomNav(page,el){
   if(page==='settings'){location.href=baseUrl+'#settings';return;}
 }
 window.cdBottomNav=cdBottomNav;
-function cdBack(){if(history.length>1)history.back();else location.href='index.html#classes';}
+function cdBack(){if(window.parent&&window.parent!==window){window.parent.postMessage({type:'mushati-assistant-back',classKey:CD.classKey},location.origin);return;}if(history.length>1)history.back();else location.href='index.html#classes';}
 window.cdBack=cdBack;
 
 async function cdInit(){
