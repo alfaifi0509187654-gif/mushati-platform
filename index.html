@@ -1896,28 +1896,65 @@ function linkToFixedCurriculum(parsed){
   });
   return rep;
 }
+var curriculumPdfLoader = null;
+function loadCurriculumPdf(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(curriculumPdfLoader) return curriculumPdfLoader;
+  curriculumPdfLoader = new Promise(function(resolve,reject){
+    var sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+    sc.onload = function(){
+      if(!window.pdfjsLib) return reject(new Error('pdfjs'));
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    sc.onerror = function(){ reject(new Error('تعذّر تحميل قارئ PDF — تحقق من الاتصال بالإنترنت')); };
+    document.head.appendChild(sc);
+  });
+  return curriculumPdfLoader;
+}
+function readCurriculumPdf(file){
+  return loadCurriculumPdf().then(function(pdfjsLib){
+    return file.arrayBuffer().then(function(buf){ return pdfjsLib.getDocument({data:buf}).promise; });
+  }).then(function(pdf){
+    var pages = [];
+    for(var n=1;n<=pdf.numPages;n++) pages.push(pdf.getPage(n).then(function(page){
+      return page.getTextContent().then(function(content){
+        return content.items.map(function(item){ return item.str || ''; }).join(' ');
+      });
+    }));
+    return Promise.all(pages).then(function(xs){ return xs.join('\n'); });
+  });
+}
 window.handleCurriculumFile = function(input){
   var file = input.files && input.files[0];
   if(!file){ toast('لم يُختَر ملف'); return; }
-  var reader = new FileReader();
-  reader.onload = function(e){
-    var text = String(e.target.result || '');
+  var isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+  var isJson = /\.json$/i.test(file.name);
+  var read = isPdf ? readCurriculumPdf(file) : new Promise(function(resolve,reject){
+    var reader = new FileReader();
+    reader.onload = function(e){ resolve(String(e.target.result || '')); };
+    reader.onerror = function(){ reject(new Error('تعذّر قراءة الملف')); };
+    reader.readAsText(file, 'utf-8');
+  });
+  toast(isPdf ? '⏳ جارٍ قراءة صفحات PDF…' : '⏳ جارٍ تحليل الملف…');
+  read.then(function(text){
     var parsed;
-    if(/\.json$/i.test(file.name)){
+    if(isJson){
       try{ parsed = parseJSONCurriculum(JSON.parse(text)); }
       catch(err){ toast('❌ ملف JSON غير صالح'); return; }
     } else {
       parsed = parseCurriculumText(text);
     }
-    if(!parsed || !parsed.stages.length){ toast('⚠️ لم يُعثَر على محتوى قابل للتحليل'); return; }
+    if(!parsed || !parsed.stages.length){ toast(isPdf ? '⚠️ لم يُعثَر على نص قابل للتحليل داخل PDF. إذا كان الملف صورًا ممسوحة ضوئيًا استخدم PDF نصيًا أو حوّله إلى TXT.' : '⚠️ لم يُعثَر على محتوى قابل للتحليل'); return; }
     var report = linkToFixedCurriculum(parsed);
     if(report.error){ toast('⚠️ ' + report.error); return; }
     state.curriculumImports.push({ id: uid(), filename: file.name, ts: Date.now(), matched: report.matchedLessons.length, addedQ: report.addedQuestions, dupQ: report.duplicatesSkipped, unmatched: report.unmatched.length });
     save();
     showImportReport(report, file.name);
     renderSettings();
-  };
-  reader.readAsText(file, 'utf-8');
+  }).catch(function(err){ toast('❌ ' + (err.message || 'تعذّر قراءة الملف')); });
+  input.value = '';
 };
 function showImportReport(rep, filename){
   var h = '<div style="text-align:center;padding:8px 0 14px">';
@@ -1978,7 +2015,7 @@ function renderCurriculumSmartPanel(){
   h += '<div class="card-title">🤖 المعالجة الذكية للمنهج + بنك الأسئلة</div>';
   h += '<div class="card-sub">ارفع ملف المنهج ليُحلَّل تلقائياً ويرتبط بالمرحلة والباب والدرس — <b>إضافة فقط بدون استبدال</b></div>';
   h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
-  h += '<input type="file" id="currFileInput" accept=".txt,.json,.csv,.md" style="display:none" onchange="handleCurriculumFile(this)">';
+  h += '<input type="file" id="currFileInput" accept=".pdf,.txt,.json,.csv,.md,application/pdf,text/plain,application/json,text/csv,text/markdown" style="display:none" onchange="handleCurriculumFile(this)">';
   h += '<button class="btn btn-primary" onclick="document.getElementById(\'currFileInput\').click()">📁 رفع ملف المنهج</button>';
   h += '<button class="btn btn-ghost" onclick="showQuestionBankStats()">📊 إحصائيات بنك الأسئلة</button>';
   h += '<button class="btn btn-ghost" onclick="clearQuestionBank()">🗑 مسح البنك</button>';
@@ -1993,7 +2030,7 @@ function renderCurriculumSmartPanel(){
   h += '✅ <b>المراحل الأربع ثابتة</b> ولا تُعدَّل<br>';
   h += '✅ <b>الأسئلة تُضاف فقط</b> — يُمنع التكرار تلقائياً<br>';
   h += '✅ <b>الربط التلقائي</b>: المرحلة → الباب → الدرس<br>';
-  h += '💡 <b>الصيغ المدعومة</b>: TXT · JSON · CSV · MD';
+  h += '💡 <b>الصيغ المدعومة</b>: PDF نصّي · TXT · JSON · CSV · MD';
   h += '</div>';
   h += '</div>';
   return h;
