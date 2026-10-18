@@ -3483,5 +3483,23 @@ card();setTimeout(card,600);
 })();
 </script>
 
+<script>
+/* ===== تفاصيل حسابات الخيار الأول: اسم مستخدم داخلي + حالة المزامنة ===== */
+(function(){
+  if(window.__MXInternalStatusLoaded)return; window.__MXInternalStatusLoaded=1;
+  var K='mashati_app_accounts_v1';
+  function escI(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function local(){try{return JSON.parse(localStorage.getItem(K)||'[]')||[];}catch(e){return[];}}
+  function cloud(){return !!(window.__mx&&__mx.isOn&&__mx.isOn());}
+  function pane(){return document.querySelector('.sett-pane[data-pane="accounts"]');}
+  function status(){var p=pane();if(!p)return;var old=document.getElementById('mxInternalStatus');if(old)old.remove();var a=local();var box=document.createElement('div');box.id='mxInternalStatus';box.className='card mx-internal-status';box.innerHTML='<div class="card-title">📊 حالة الحسابات المضافة حاليًا</div><div class="sts-hint">هذه حسابات داخلية تعمل باسم المستخدم وكلمة المرور. يمكن إرسال بياناتها للمستخدم عبر WhatsApp. لا تحتاج إلى بريد إلكتروني، ولا تُمنح هوية Supabase مستقلة.</div><div id="mxInternalRows"><div class="sts-hint">⏳ جارٍ قراءة حالة المزامنة…</div></div>';p.appendChild(box);var rows=document.getElementById('mxInternalRows');function paint(c){rows.innerHTML=a.length?a.map(function(x){var y=(c||[]).filter(function(z){return z.role_id===x.id;})[0],desc=x.role==='admin'?'كامل المنصة وإدارة الحسابات':x.role==='viewer'?'عرض شامل وتقارير وطباعة فقط':'مختبري: تجارب ومعدات وتعديل وطباعة';return '<div class="mx-internal-row"><div><b>'+escI(x.name||x.username)+'</b><small dir="ltr">'+escI(x.username)+'</small></div><div><span class="badge '+(x.active?'b-green':'b-slate')+'">'+(x.active?'مفعّل':'موقوف')+'</span><small>'+escI(desc)+'</small></div><div><span class="mx-cloud-pill">'+(y?'☁️ متزامن':'🟠 محلي فقط')+'</span><small>'+(y?(y.auth_user_id?'مرتبط بهوية Supabase':'سحابي بدون بريد/Auth'):'سيُرفع عند الحفظ مع اتصال Supabase')+'</small></div></div>';}).join(''):'<div class="sts-hint">لا توجد حسابات داخلية مضافة بعد. استخدم زر «إضافة حساب» أعلاه.</div>';}
+    if(cloud())__mx.rpc('mx_app_roles_list',{}).then(function(r){paint(Array.isArray(r)?r:[]);}).catch(function(){paint([]);});else paint([]);}
+  function watch(){var p=pane();if(!p||p.__mxStatusWatch)return;p.__mxStatusWatch=1;new MutationObserver(function(){if(document.querySelector('.mx-accounts'))setTimeout(status,30);}).observe(p,{childList:true});status();}
+  var old=window.renderSettings;if(old)window.renderSettings=function(){var r=old.apply(this,arguments);setTimeout(watch,80);return r;};
+  setTimeout(watch,900);
+  var css=document.createElement('style');css.textContent='.mx-internal-status{margin-top:14px;border-top:4px solid #0e7490}.mx-internal-row{display:grid;grid-template-columns:1.2fr 1fr 1.2fr;gap:10px;align-items:center;border-bottom:1px solid #e2e8f0;padding:10px 0}.mx-internal-row:last-child{border-bottom:0}.mx-internal-row b,.mx-internal-row small{display:block}.mx-internal-row small{font-size:11px;color:#64748b;line-height:1.6}.mx-cloud-pill{font-size:12px;font-weight:800;color:#0f766e}@media(max-width:650px){.mx-internal-row{grid-template-columns:1fr;gap:4px}}';document.head.appendChild(css);
+})();
+</script>
+
 </body>
 </html>
