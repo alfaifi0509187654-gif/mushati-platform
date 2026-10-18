@@ -126,6 +126,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 </nav>
 
 
+<header class="cd-header">
+  <button class="icon-btn" onclick="cdBack()">›</button>
+  <div class="title">
+    <span id="cdClassTitle">ثالث ثانوي / أ</span>
+    <small id="cdClassName">كيمياء 3 · CHM 301</small>
+  </div>
+  <button class="icon-btn" onclick="cdHome()">☰</button>
+</header>
+
 <nav class="cd-tabs" id="cdTabs">
   <button class="cd-tab active" data-tab="general" onclick="cdSwitchTab('general')">عام</button>
   <button class="cd-tab" data-tab="students" onclick="cdSwitchTab('students')">الطلاب</button>
@@ -278,7 +287,7 @@ function cdCalcStudentYearWork(stid){
 function cdCalcStudentAttendance(stid){var att=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey];if(!att)return 100;var sessions=Object.keys(att).filter(function(sid){return sid.indexOf('_')!==0;});if(!sessions.length)return 100;var present=0,total=0;sessions.forEach(function(sid){var rec=att[sid]&&att[sid][stid];if(!rec)return;total++;if(rec.status==='present'||rec.autoRemote)present++;else if(rec.status==='late')present+=0.5;});return total>0?Math.round((present/total)*100):100;}
 function cdBehaviorSummary(){var beh=CD.state&&CD.state.behavior&&CD.state.behavior[CD.classKey];if(!beh)return{pos:0,neg:0,total:0,sessions:0};var pos=0,neg=0;Object.keys(beh).forEach(function(sid){Object.keys(beh[sid]||{}).forEach(function(stid){(beh[sid][stid]||[]).forEach(function(x){if(x.delta>0)pos++;else if(x.delta<0)neg++;});});});return{pos:pos,neg:neg,total:pos+neg,sessions:Object.keys(beh).length};}
 
-function cdRenderHeader(){if(!CD.section)return;var title=cdEl('cdClassTitle'),name=cdEl('cdClassName');if(title)title.textContent='ثالث ثانوي / '+CD.section;if(name)name.textContent='كيمياء 3 · CHM 301';}
+function cdRenderHeader(){if(!CD.section)return;cdEl('cdClassTitle').textContent='ثالث ثانوي / '+CD.section;cdEl('cdClassName').textContent='كيمياء 3 · CHM 301';}
 function cdRenderStats(){
   cdEl('cdStatStudents').textContent=CD.students.length;
   cdEl('cdStatLevel').textContent=cdCalcLevel()+'%';
