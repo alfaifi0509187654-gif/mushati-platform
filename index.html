@@ -787,6 +787,7 @@ body.student-mode .fs-badge::after{content:' · وضع الطالب'}
 <div class="content">
 <div class="page active" id="page-home">
 <div id="todayPath"></div>
+<div id="homeTasks" style="margin-bottom:16px"></div>
 <div class="hero"><div class="hero-title">أهلاً، <span id="heroName">أ. عبدالله الفيفي</span> 👋</div><div class="hero-text">13 درساً · جدول مدرسي · قسم طلاب كامل · توزيع 60/40</div></div>
 <div class="grid grid-4" id="homeStats" style="margin-bottom:16px"></div>
 <div id="homeAlerts" style="margin-bottom:16px"></div>
@@ -2258,6 +2259,29 @@ var _rh=renderHome;renderHome=function(){var r=_rh.apply(this,arguments);try{ren
 var _rs=renderScheduleTab;renderScheduleTab=function(){var r=_rs.apply(this,arguments);try{ptRender();}catch(e){console.error(e);}return r;};
 try{render(true);}catch(e){console.error(e);}
 setInterval(function(){try{render(false);}catch(e){console.error(e);}},1000);
+	})();
+</script>
+
+<script>
+/* ===== المهام — بطاقة بسيطة في الصفحة الرئيسية ===== */
+(function(){
+  var STATUS={todo:{label:'لم تبدأ',color:'#64748b',bg:'#f8fafc'},doing:{label:'قيد التنفيذ',color:'#d97706',bg:'#fffbeb'},done:{label:'مكتملة',color:'#15803d',bg:'#f0fdf4'}};
+  function list(){if(!Array.isArray(state.tasks))state.tasks=[];return state.tasks;}
+  function editable(){var r=localStorage.getItem('mashati_app_role_v1')||'admin';return r!=='viewer'&&r!=='lab_keeper';}
+  function pct(){var a=list();return a.length?Math.round(a.filter(function(x){return x.status==='done';}).length*100/a.length):0;}
+  function taskCard(){var a=list(),done=a.filter(function(x){return x.status==='done';}).length,doing=a.filter(function(x){return x.status==='doing';}).length,todo=a.length-done-doing,p=pct();
+    return '<div class="card" style="padding:14px 16px;cursor:pointer;border-top:3px solid #0d9488" onclick="mxOpenTasks()"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="width:42px;height:42px;border-radius:12px;background:#ccfbf1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:22px">✓</div><div style="flex:1;min-width:180px"><div class="card-title" style="margin:0">المهام</div><div style="font-size:12px;color:#64748b;font-weight:700">'+a.length+' مهمة · '+done+' مكتملة</div></div><div style="min-width:160px;flex:0 1 220px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#334155"><span>نسبة الإنجاز</span><b style="color:#0f766e">'+p+'%</b></div><div style="height:8px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+p+'%;background:#0d9488;border-radius:8px"></div></div></div><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();mxOpenTasks()">فتح المهام</button></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;font-size:12px;font-weight:800"><span style="padding:5px 9px;border-radius:8px;background:#f8fafc;color:#64748b">لم تبدأ '+todo+'</span><span style="padding:5px 9px;border-radius:8px;background:#fffbeb;color:#b45309">قيد التنفيذ '+doing+'</span><span style="padding:5px 9px;border-radius:8px;background:#f0fdf4;color:#15803d">مكتملة '+done+'</span></div></div>';
+  }
+  function board(){var a=list(),html='<div class="sts-hint" style="margin-bottom:10px">نسبة الإنجاز: <b style="color:#0f766e">'+pct()+'%</b></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start">';['todo','doing','done'].forEach(function(s){var rows=a.filter(function(x){return x.status===s;});html+='<div style="background:'+STATUS[s].bg+';border:1px solid #e2e8f0;border-radius:10px;padding:9px;min-height:90px"><div style="font-weight:800;color:'+STATUS[s].color+';font-size:13px;margin-bottom:7px">'+STATUS[s].label+' ('+rows.length+')</div>'+(rows.length?rows.map(function(x){return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-top:6px"><div style="font-weight:800;font-size:12.5px;word-break:break-word">'+esc(x.title)+'</div>'+(x.note?'<div style="font-size:11px;color:#64748b;margin-top:3px">'+esc(x.note)+'</div>':'')+(editable()?'<select class="form-input" style="font-size:11px;padding:4px;margin-top:6px" onchange="mxTaskSetStatus(\''+x.id+'\',this.value)"><option value="todo" '+(s==='todo'?'selected':'')+'>لم تبدأ</option><option value="doing" '+(s==='doing'?'selected':'')+'>قيد التنفيذ</option><option value="done" '+(s==='done'?'selected':'')+'>مكتملة</option></select><button class="btn btn-danger btn-sm" style="margin-top:5px;width:100%" onclick="mxTaskDelete(\''+x.id+'\')">حذف</button>':'')+'</div>';}).join(''):'<div style="font-size:12px;color:#94a3b8;text-align:center;padding:12px 2px">لا توجد مهام</div>')+'</div>';});return html+'</div>'+(editable()?'<div style="margin-top:12px;text-align:center"><button class="btn btn-primary" onclick="mxTaskAdd()">+ إضافة مهمة جديدة</button></div>':'<div class="sts-hint" style="margin-top:10px">صلاحية العرض والطباعة فقط — لا يمكن تعديل المهام.</div>');}
+  function refreshBoard(){var b=el('mxTaskBoard');if(b)b.innerHTML=board();renderHomeTasks();}
+  window.renderHomeTasks=function(){var h=el('homeTasks');if(h)h.innerHTML=taskCard();};
+  window.mxOpenTasks=function(){openModal('✓ المهام', '<div id="mxTaskBoard">'+board()+'</div>', '<button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>');};
+  window.mxTaskAdd=function(){if(!editable()){toast('🔒 لا تملك صلاحية إضافة المهام');return;}openModal('+ إضافة مهمة','<div class="field"><label>عنوان المهمة</label><input id="mxTaskTitle" class="form-input" autofocus maxlength="120"></div><div class="field"><label>ملاحظة مختصرة (اختياري)</label><textarea id="mxTaskNote" class="form-input" rows="3" maxlength="300"></textarea></div><div class="field"><label>الحالة</label><select id="mxTaskStatus" class="form-input"><option value="todo">لم تبدأ</option><option value="doing">قيد التنفيذ</option><option value="done">مكتملة</option></select></div>','<button class="btn btn-primary" onclick="mxTaskSave()">حفظ</button><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>');};
+  window.mxTaskSave=function(){if(!editable())return;var t=(el('mxTaskTitle').value||'').trim(),n=(el('mxTaskNote').value||'').trim(),s=el('mxTaskStatus').value;if(!t){toast('أدخل عنوان المهمة');return;}list().push({id:'task_'+Date.now().toString(36),title:t,note:n,status:STATUS[s]?s:'todo',createdAt:Date.now()});save();closeModal();renderHomeTasks();toast('✅ تمت إضافة المهمة');};
+  window.mxTaskSetStatus=function(id,s){if(!editable())return;var x=list().filter(function(t){return t.id===id;})[0];if(!x||!STATUS[s])return;x.status=s;save();refreshBoard();};
+  window.mxTaskDelete=function(id){if(!editable()||!confirm('حذف هذه المهمة؟'))return;state.tasks=list().filter(function(t){return t.id!==id;});save();refreshBoard();toast('تم حذف المهمة');};
+  var oldHome=window.renderHome;window.renderHome=function(){var r=oldHome.apply(this,arguments);renderHomeTasks();return r;};
+  if(typeof save==='function'&&Array.isArray(state.tasks)===false){state.tasks=[];save();}
 })();
 </script>
 
