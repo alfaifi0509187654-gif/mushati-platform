@@ -1329,18 +1329,9 @@ function renderStudentSection(){
   if(!stuOpenClass){renderClasses();return;}
   var parts=splitClassKey(stuOpenClass);
   if(!parts){renderClasses();return;}
-  var book=CHEM_BOOKS[parts.currKey]||CHEM_BOOKS.g12_s1;
-  var color=CLASS_COLORS[parts.section]||{bg:book.color,light:'#f1f5f9',text:'#475569'};
-  var students=getStuStudents();
+  /* شاشة الفصل تعرض محتوى مساعد المعلم مباشرة دون البطاقات الخارجية المكررة. */
   var h='';
-  h+='<div style="background:linear-gradient(120deg,'+color.bg+','+color.bg+'cc);border-radius:16px;padding:20px;color:#fff;margin-bottom:16px">';
-  h+='<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">';
-  h+='<div style="width:60px;height:60px;background:rgba(255,255,255,.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800">'+esc(parts.section)+'</div>';
-  h+='<div style="flex:1;min-width:200px"><div style="font-size:20px;font-weight:800">شعبة '+esc(parts.section)+' — '+esc(book.name)+'</div><div style="font-size:13px;opacity:.9;margin-top:4px">'+students.length+' طالب</div></div>';
-  h+='<button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff" onclick="closeStudentSection()">← رجوع</button></div></div>';
-  h+='<section class="class-assistant-embed" aria-label="مساعد المعلم — محتوى الفصل الكامل">';
-  h+='<div class="class-assistant-embed-head"><div><b>🎓 مساعد المعلم</b><small>جميع محتويات الفصل — بيانات شعبة '+esc(parts.section)+' فقط</small></div><span>عام · الطلاب · أعمال السنة · جميع أدوات مساعد المعلم</span></div>';
-  h+='<iframe class="class-assistant-frame" title="مساعد المعلم — شعبة '+esc(parts.section)+'" src="teacher-assistant.html?class='+encodeURIComponent(stuOpenClass)+'" loading="eager"></iframe></section>';
+  h+='<iframe class="class-assistant-frame" title="مساعد المعلم — شعبة '+esc(parts.section)+'" src="teacher-assistant.html?class='+encodeURIComponent(stuOpenClass)+'" loading="eager"></iframe>';
   el('classDetail').innerHTML=h;
   el('classesView').style.display='none';
   el('classDetail').style.display='block';
