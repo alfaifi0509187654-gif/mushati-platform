@@ -11,7 +11,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif;background:#f5f6f8;color:#1a1d23;line-height:1.5;overflow-x:hidden;padding-bottom:76px}
+body{font-family:'Tajawal','Segoe UI',Tahoma,Arial,sans-serif;background:#f5f6f8;color:#1a1d23;line-height:1.5;overflow-x:hidden;padding-bottom:16px}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 .cd-header{position:sticky;top:0;background:#ffffff;z-index:100;padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e5e7eb}
 .cd-header .icon-btn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;transition:.2s;color:#4b5563}
@@ -111,19 +111,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   th,td{color:#000!important;border-bottom:1px solid #ddd!important}
 }
 
-.cd-bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px 12px;z-index:200;box-shadow:0 -8px 24px -12px rgba(0,0,0,.16)}
-.cd-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:10px;transition:.2s;cursor:pointer}
-.cd-nav-item:active{background:#f0f1f4}.cd-nav-item .ic{font-size:20px;line-height:1}.cd-nav-item .lbl{font-size:10px;color:#6b7280;font-weight:700;text-align:center;line-height:1.2}.cd-nav-item.active .lbl{color:#2563eb}.cd-nav-item.active .ic{filter:drop-shadow(0 0 5px rgba(37,99,235,.35))}
 </style>
 </head>
 <body>
-<nav class="cd-bottom-nav">
-  <div class="cd-nav-item active" onclick="cdBottomNav('assistant',this)"><div class="ic">🎓</div><div class="lbl">مساعد المعلم</div></div>
-  <div class="cd-nav-item" onclick="cdBottomNav('home',this)"><div class="ic">🏠</div><div class="lbl">الرئيسية</div></div>
-  <div class="cd-nav-item" onclick="cdBottomNav('classes',this)"><div class="ic">👥</div><div class="lbl">الفصول والطلاب</div></div>
-  <div class="cd-nav-item" onclick="cdBottomNav('portfolio',this)"><div class="ic">📄</div><div class="lbl">ملف الإنجاز</div></div>
-  <div class="cd-nav-item" onclick="cdBottomNav('settings',this)"><div class="ic">⚙️</div><div class="lbl">الإعدادات</div></div>
-</nav>
 
 
 <nav class="cd-tabs" id="cdTabs">
@@ -835,17 +825,6 @@ function cdSelfTest(){
 }
 
 
-function cdBottomNav(page,el){
-  document.querySelectorAll('.cd-nav-item').forEach(function(x){x.classList.remove('active');});
-  if(el)el.classList.add('active');
-  var base='index.html';
-  if(page==='assistant'){location.href='teacher-assistant.html?class='+encodeURIComponent(CD.classKey||'') ;return;}
-  if(page==='home'){location.href=base+'#home';return;}
-  if(page==='classes'){location.href=base+'#classes';return;}
-  if(page==='portfolio'){location.href=base+'#portfolio';return;}
-  if(page==='settings'){location.href=base+'#settings';return;}
-}
-window.cdBottomNav=cdBottomNav;
 
 async function cdInit(){
   try{
