@@ -1943,35 +1943,51 @@ function readCurriculumPdf(file){
     return Promise.all(pages).then(function(xs){ return xs.join('\n'); });
   });
 }
-window.handleCurriculumFile = function(input){
-  var file = input.files && input.files[0];
-  if(!file){ toast('لم يُختَر ملف'); return; }
-  var isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
-  var isJson = /\.json$/i.test(file.name);
-  var read = isPdf ? readCurriculumPdf(file) : new Promise(function(resolve,reject){
-    var reader = new FileReader();
-    reader.onload = function(e){ resolve(String(e.target.result || '')); };
-    reader.onerror = function(){ reject(new Error('تعذّر قراءة الملف')); };
-    reader.readAsText(file, 'utf-8');
+function loadCurriculumOcr(){
+  if(window.MushatiArabicOCR)return Promise.resolve(window.MushatiArabicOCR);
+  if(window.__currOcrLoader)return window.__currOcrLoader;
+  window.__currOcrLoader=new Promise(function(resolve,reject){
+    var sc=document.createElement('script');
+    sc.src=new URL('ocr-arabic-worker.js',document.baseURI).href;
+    sc.onload=function(){window.MushatiArabicOCR?resolve(window.MushatiArabicOCR):reject(new Error('لم يتم تحميل محرك OCR'));};
+    sc.onerror=function(){reject(new Error('تعذّر تحميل محرك OCR العربي'));};
+    document.head.appendChild(sc);
   });
-  toast(isPdf ? '⏳ جارٍ قراءة صفحات PDF…' : '⏳ جارٍ تحليل الملف…');
+  return window.__currOcrLoader;
+}
+function saveCurriculumOriginal(file,mode){
+  try{if(window.mxRefUpload)window.mxRefUpload(file);}catch(e){}
+  state.curriculumImports=state.curriculumImports||[];
+  state.curriculumImports.push({id:uid(),filename:file.name,ts:Date.now(),matched:0,addedQ:0,dupQ:0,unmatched:0,storedOnly:mode||'original'});
+  save();
+}
+window.handleCurriculumFile = function(input){
+  var file=input.files&&input.files[0];
+  if(!file){toast('لم يُختَر ملف');return;}
+  var name=file.name||'ملف المنهج',ext=(name.split('.').pop()||'').toLowerCase();
+  var isPdf=ext==='pdf'||file.type==='application/pdf',isJson=ext==='json',isText=/^(txt|csv|tsv|md|text|xml|html)$/i.test(ext)||/^text\//i.test(file.type||'');
+  var isImage=/^(png|jpg|jpeg|webp|gif|bmp|tif|tiff)$/i.test(ext)||/^image\//i.test(file.type||'');
+  var originalSaved=false;
+  function preserve(mode){if(originalSaved)return;originalSaved=true;saveCurriculumOriginal(file,mode);}
+  function textRead(){return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(e){resolve(String(e.target.result||''));};r.onerror=function(){reject(new Error('تعذّر قراءة الملف'));};r.readAsText(file,'utf-8');});}
+  var read;
+  if(isPdf)read=readCurriculumPdf(file).then(function(text){if(String(text||'').trim().length>=30)return text;return loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file).then(function(r){return r.text||'';});});});
+  else if(isImage)read=loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file).then(function(r){return r.text||'';});});
+  else if(isJson||isText)read=textRead();
+  else {preserve('stored_for_processing');toast('✅ تم رفع الملف وحفظه كما هو — سيُحلّل عند توفر قارئ هذه الصيغة');input.value='';renderSettings();return;}
+  preserve(isImage?'ocr_pending':isPdf?'pdf_pending':'text_pending');
+  toast(isImage?'⏳ جارٍ تشغيل OCR العربي للصورة…':isPdf?'⏳ جارٍ قراءة PDF ثم OCR عند الحاجة…':'⏳ جارٍ تحليل الملف…');
   read.then(function(text){
     var parsed;
-    if(isJson){
-      try{ parsed = parseJSONCurriculum(JSON.parse(text)); }
-      catch(err){ toast('❌ ملف JSON غير صالح'); return; }
-    } else {
-      parsed = parseCurriculumText(text);
-    }
-    if(!parsed || !parsed.stages.length){ toast(isPdf ? '⚠️ لم يُعثَر على نص قابل للتحليل داخل PDF. إذا كان الملف صورًا ممسوحة ضوئيًا استخدم PDF نصيًا أو حوّله إلى TXT.' : '⚠️ لم يُعثَر على محتوى قابل للتحليل'); return; }
-    var report = linkToFixedCurriculum(parsed);
-    if(report.error){ toast('⚠️ ' + report.error); return; }
-    state.curriculumImports.push({ id: uid(), filename: file.name, ts: Date.now(), matched: report.matchedLessons.length, addedQ: report.addedQuestions, dupQ: report.duplicatesSkipped, unmatched: report.unmatched.length });
-    save();
-    showImportReport(report, file.name);
-    renderSettings();
-  }).catch(function(err){ toast('❌ ' + (err.message || 'تعذّر قراءة الملف')); });
-  input.value = '';
+    if(isJson){try{parsed=parseJSONCurriculum(JSON.parse(text));}catch(err){toast('✅ حُفظ الملف، لكن JSON غير صالح للتحليل');return;}}
+    else parsed=parseCurriculumText(String(text||''));
+    if(!parsed||!parsed.stages.length){toast('✅ تم رفع الملف وحفظه، لكن لم يُستخرج منه هيكل منهج قابل للربط بعد');return;}
+    var report=linkToFixedCurriculum(parsed);
+    if(report.error){toast('✅ تم حفظ الملف الأصلي — '+report.error);return;}
+    state.curriculumImports.push({id:uid(),filename:name,ts:Date.now(),matched:report.matchedLessons.length,addedQ:report.addedQuestions,dupQ:report.duplicatesSkipped,unmatched:report.unmatched.length,analyzed:true});
+    save();showImportReport(report,name);renderSettings();
+  }).catch(function(err){toast('✅ تم حفظ الملف الأصلي، وتعذّر التحليل التلقائي: '+(err.message||'صيغة غير قابلة للقراءة حالياً'));renderSettings();});
+  input.value='';
 };
 function showImportReport(rep, filename){
   var h = '<div style="text-align:center;padding:8px 0 14px">';
@@ -2030,9 +2046,9 @@ function renderCurriculumSmartPanel(){
   var h = '';
   h += '<div class="card">';
   h += '<div class="card-title">🤖 المعالجة الذكية للمنهج + بنك الأسئلة</div>';
-  h += '<div class="card-sub">ارفع ملف المنهج ليُحلَّل تلقائياً ويرتبط بالمرحلة والباب والدرس — <b>إضافة فقط بدون استبدال</b></div>';
+  h += '<div class="card-sub">ارفع ملف المنهج بأي صيغة — يُحفظ الملف الأصلي أولاً، ثم يُحلَّل تلقائياً عندما تكون الصيغة قابلة للقراءة — <b>إضافة فقط بدون استبدال</b></div>';
   h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">';
-  h += '<input type="file" id="currFileInput" accept=".pdf,.txt,.json,.csv,.md,application/pdf,text/plain,application/json,text/csv,text/markdown" style="display:none" onchange="handleCurriculumFile(this)">';
+  h += '<input type="file" id="currFileInput" accept="*/*" style="display:none" onchange="handleCurriculumFile(this)">';
   h += '<button class="btn btn-primary" onclick="document.getElementById(\'currFileInput\').click()">📁 رفع ملف المنهج</button>';
   h += '<button class="btn btn-ghost" onclick="showQuestionBankStats()">📊 إحصائيات بنك الأسئلة</button>';
   h += '<button class="btn btn-ghost" onclick="clearQuestionBank()">🗑 مسح البنك</button>';
@@ -2332,7 +2348,7 @@ setInterval(function(){try{render(false);}catch(e){console.error(e);}},1000);
 (function(){
   var REF_KEY='mashati_references_v1',DB_NAME='mashati_references_files',activeFilter='all',searchText='';
   var REF_NOTIFY_WEBHOOK='https://api.manus.im/api/webhook/triggers/7600dd9a-6f69-41ff-baeb-aaf1a6074eb2';
-  var TYPES={pdf:'PDF',doc:'Word',docx:'Word',ppt:'PowerPoint',pptx:'PowerPoint',png:'صورة',jpg:'صورة',jpeg:'صورة',webp:'صورة'};
+  var TYPES={pdf:'PDF',doc:'Word',docx:'Word',docm:'Word',odt:'مستند',rtf:'مستند',ppt:'PowerPoint',pptx:'PowerPoint',pptm:'PowerPoint',odp:'عرض',xls:'Excel',xlsx:'Excel',xlsm:'Excel',ods:'جدول',csv:'CSV',tsv:'TSV',txt:'نص',md:'Markdown',json:'JSON',xml:'XML',html:'HTML',png:'صورة',jpg:'صورة',jpeg:'صورة',webp:'صورة',gif:'صورة',bmp:'صورة',tif:'صورة',tiff:'صورة',svg:'صورة'};
   function local(){try{return JSON.parse(localStorage.getItem(REF_KEY)||'[]')||[];}catch(e){return[];}}
   function saveLocal(a){try{localStorage.setItem(REF_KEY,JSON.stringify(a));}catch(e){}}
   function canEdit(){var r=localStorage.getItem('mashati_app_role_v1')||'admin';return r!=='viewer'&&r!=='lab_keeper';}
@@ -2350,7 +2366,7 @@ setInterval(function(){try{render(false);}catch(e){console.error(e);}},1000);
   window.renderReferencesPage=function(){paint();loadCloud();};
   window.mxRefSearch=function(v){searchText=v||'';renderList();};
   window.mxRefFilter=function(v){activeFilter=v||'all';renderList();};
-  window.mxRefUpload=function(file){if(!canEdit()||!file)return;var ext=(file.name.split('.').pop()||'').toLowerCase(),typeLabel=TYPES[ext];if(!typeLabel){toast('⚠️ نوع الملف غير مدعوم');return;}if(file.size>50*1024*1024){toast('⚠️ الحد الأقصى للملف 50MB');return;}var id='ref_'+Date.now().toString(36),row={id:id,title:file.name.replace(/\.[^.]+$/,''),fileName:file.name,fileType:ext,mimeType:file.type||'application/octet-stream',typeLabel:typeLabel,fileSize:file.size,status:'uploaded',createdAt:Date.now(),updatedAt:Date.now(),cloud:false};var a=local();a.push(row);saveLocal(a);putFile(id,file);paint();toast('✅ حُفظ الملف محليًا');if(cloud()){row.status='processing';row.updatedAt=Date.now();saveLocal(a);paint();mxRefCloudUpload(row,file).then(function(){toast('☁️ تم حفظ المرجع في Supabase');}).catch(function(e){row.status='error';row.error=e.message;row.updatedAt=Date.now();saveLocal(a);paint();notify('reference_upload_failed',row,e.message);toast('⚠️ تعذر الحفظ السحابي — بقيت النسخة المحلية');});}};
+  window.mxRefUpload=function(file){if(!canEdit()||!file)return;var ext=(file.name.split('.').pop()||'').toLowerCase(),typeLabel=TYPES[ext]||'ملف';if(file.size>50*1024*1024){toast('⚠️ الحد الأقصى للملف 50MB');return;}var id='ref_'+Date.now().toString(36),row={id:id,title:file.name.replace(/\.[^.]+$/,''),fileName:file.name,fileType:ext||'unknown',mimeType:file.type||'application/octet-stream',typeLabel:typeLabel,fileSize:file.size,status:'uploaded',createdAt:Date.now(),updatedAt:Date.now(),cloud:false};var a=local();a.push(row);saveLocal(a);putFile(id,file);paint();toast('✅ حُفظ الملف محليًا');if(cloud()){row.status='processing';row.updatedAt=Date.now();saveLocal(a);paint();mxRefCloudUpload(row,file).then(function(){toast('☁️ تم حفظ المرجع في Supabase');}).catch(function(e){row.status='error';row.error=e.message;row.updatedAt=Date.now();saveLocal(a);paint();notify('reference_upload_failed',row,e.message);toast('⚠️ تعذر الحفظ السحابي — بقيت النسخة المحلية');});}};
   function mxRefCloudUpload(row,file){return __mx.token().then(function(tok){var uid=(__mx.sess()||{}).uid;if(!uid)throw new Error('لا توجد هوية مستخدم سحابية');var path=uid+'/'+row.id+'-'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');return fetch(__mx.base()+'/storage/v1/object/mx-references/'+path,{method:'POST',headers:{apikey:__mx.cfg().key,Authorization:'Bearer '+tok,'x-upsert':'false','Content-Type':file.type||'application/octet-stream'},body:file}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t||'فشل رفع الملف');});return __mx.rest('mx_references',{method:'POST',headers:{Prefer:'return=representation'},body:{id:row.id,owner_id:uid,title:row.title,file_name:row.fileName,file_type:row.fileType,mime_type:row.mimeType,file_size:row.fileSize,storage_path:path,status:'processing',metadata:{source:'mushati',phase:1}}});}).then(function(){row.cloud=true;row.storagePath=path;row.status='processing';row.updatedAt=Date.now();var a=local();saveLocal(a);paint();notify('reference_uploaded',row);});});}
   function loadCloud(){if(!cloud())return;__mx.rest('mx_references?select=id,title,file_name,file_type,mime_type,file_size,storage_path,status,metadata,created_at,updated_at&order=updated_at.desc').then(function(r){if(!Array.isArray(r))return;var a=local();r.forEach(function(x){var y=a.filter(function(z){return z.id===x.id;})[0];var q={id:x.id,title:x.title,fileName:x.file_name,fileType:x.file_type,mimeType:x.mime_type,fileSize:x.file_size,status:x.status,storagePath:x.storage_path,typeLabel:TYPES[x.file_type]||'ملف',createdAt:new Date(x.created_at).getTime(),updatedAt:new Date(x.updated_at).getTime(),cloud:true};if(y)Object.assign(y,q);else a.push(q);});saveLocal(a);paint();}).catch(function(){});}
   window.mxRefArchive=function(id){if(!canEdit())return;var a=local(),x=a.filter(function(y){return y.id===id;})[0];if(!x)return;x.status='archived';x.updatedAt=Date.now();saveLocal(a);paint();if(cloud()&&x.cloud)__mx.rest('mx_references?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{status:'archived'}}).catch(function(){});};
