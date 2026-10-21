@@ -802,7 +802,7 @@ body.student-mode .fs-badge::after{content:' · وضع الطالب'}
 <div class="page" id="page-classes"><div id="classesView"><div class="grid grid-3" id="classesGrid"></div></div><div id="classDetail" style="display:none"></div></div>
 <div class="page" id="page-education">
 <div id="eduListView">
-<div class="card" id="eduLessonHub"><div class="card-title">📘 محتوى المنهج</div><div class="card-sub">اختر القسم لفتح محتواه داخل المنصة</div><div class="grid grid-4" style="margin-top:14px"><button class="btn btn-primary" onclick="openEmbeddedLessons()" style="min-height:82px;font-size:16px">📖<br>الدروس</button><button class="btn btn-ghost" onclick="openEducationTests()" style="min-height:82px;font-size:16px">📝<br>الاختبارات</button><button class="btn btn-ghost" onclick="openEducationAssignments()" style="min-height:82px;font-size:16px">📋<br>الواجبات</button><button class="btn btn-ghost" onclick="navigate('references')" style="min-height:82px;font-size:16px">📚<br>المكتبة</button></div></div>
+<div class="card" id="eduLessonHub"><div class="card-title">📘 محتوى المنهج</div><div class="card-sub">اختر القسم لفتح محتواه داخل المنصة</div><div class="grid grid-4" style="margin-top:14px"><button class="btn btn-primary" onclick="openEmbeddedLessons()" style="min-height:82px;font-size:16px">📖<br>الدروس</button><button class="btn btn-ghost" onclick="openEducationTests()" style="min-height:82px;font-size:16px">📝<br>الاختبارات</button><button class="btn btn-ghost" onclick="openEducationAssignments()" style="min-height:82px;font-size:16px">📋<br>الواجبات</button><button class="btn btn-ghost" onclick="openEducationLibrary()" style="min-height:82px;font-size:16px">📚<br>المكتبة</button></div></div>
 <div class="card"><div class="card-title">المنهج — الكيمياء 3</div><div class="card-sub">13 درساً مستقلاً حسب خطة الوزارة</div><div style="margin-top:16px;padding:16px;background:linear-gradient(120deg,#0f766e,#14b8a6);border-radius:12px;color:#fff" id="eduBookBanner"></div></div>
 <div id="eduToolbar" style="margin-bottom:14px"></div>
 <div class="card"><div class="card-title">📚 المنهج الدراسي</div><div class="card-sub" id="eduCurrSub">—</div><div id="eduChapters"></div></div>
@@ -3671,8 +3671,13 @@ card();setTimeout(card,600);
       return sourceScripts(doc,shadow);
     }).then(function(){if(window.toast)toast('✅ تم دمج الدروس والأنشطة التفاعلية داخل أيقونة الدروس');}).catch(function(e){if(h)h.innerHTML='<div class="empty" style="color:#b91c1c">تعذر تحميل ملف الدروس: '+escL(e.message)+'<br><small>تحقق من نشر ملف curriculum-lessons-source.html مع المنصة.</small></div>';});
   };
-  window.openEducationTests=function(){openEmbeddedLessons();setTimeout(function(){if(window.toast)toast('افتح قسم بنك الأسئلة من شريط ملف الدروس');},350);};
-  window.openEducationAssignments=function(){openEmbeddedLessons();setTimeout(function(){if(window.toast)toast('الأنشطة وأوراق العمل متاحة داخل ملف الدروس المدمج');},350);};
+  window.openEmptyCurriculumSection=function(title){
+    var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='none';
+    if(d){d.style.display='block';d.innerHTML='<div class="card"><div class="card-title">'+(title==='الاختبارات'?'📝':title==='الواجبات'?'📋':'📚')+' '+escL(title)+'</div><div class="empty" style="margin-top:18px"><div class="empty-icon">'+(title==='الاختبارات'?'📝':title==='الواجبات'?'📋':'📚')+'</div><h4>لا يوجد محتوى حاليًا</h4><p>سيظهر محتوى هذا القسم عند إضافته من إعدادات المنهج.</p></div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeEmbeddedLessons()">← العودة إلى المنهج</button></div>';}
+  };
+  window.openEducationTests=function(){openEmptyCurriculumSection('الاختبارات');};
+  window.openEducationAssignments=function(){openEmptyCurriculumSection('الواجبات');};
+  window.openEducationLibrary=function(){openEmptyCurriculumSection('المكتبة');};
 })();
 </script>
 
