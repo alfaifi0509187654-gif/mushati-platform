@@ -3644,7 +3644,8 @@ card();setTimeout(card,600);
     var inline=scripts.filter(function(s){return !s.src;});
     function loadExternal(s){return new Promise(function(resolve){var x=document.createElement('script');x.src=s.src;x.onload=resolve;x.onerror=resolve;document.head.appendChild(x);});}
     return Promise.all(external.map(loadExternal)).then(function(){
-      var scoped=scopedDocument(root),allNames={};
+      var scoped=scopedDocument(root),allNames={},previousEmbedFlag=window.__MX_EMBED_CONTEXT__;
+      window.__MX_EMBED_CONTEXT__=true;
       inline.forEach(function(s){(s.textContent.match(/function\s+([A-Za-z_$][\w$]*)\s*\(/g)||[]).forEach(function(x){var m=x.match(/function\s+([A-Za-z_$][\w$]*)/);if(m)allNames[m[1]]=1;});});
       var names=Object.keys(allNames);
       inline.forEach(function(s){
@@ -3654,6 +3655,7 @@ card();setTimeout(card,600);
           names.forEach(function(n){if(ret&&typeof ret[n]==='function'&&typeof window[n]==='undefined')window[n]=ret[n];});
         }catch(e){console.warn('تعذر تشغيل جزء من ملف الدروس',e);}
       });
+      if(previousEmbedFlag===undefined)delete window.__MX_EMBED_CONTEXT__;else window.__MX_EMBED_CONTEXT__=previousEmbedFlag;
     });
   }
   window.closeEmbeddedLessons=function(){var h=host();if(h)h.innerHTML='';var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='block';if(d)d.style.display='none';};
@@ -3664,6 +3666,8 @@ card();setTimeout(card,600);
       var doc=new DOMParser().parseFromString(text,'text/html');var shadow=h.attachShadow({mode:'open'});h.__mounted=1;
       doc.querySelectorAll('style,link[rel="stylesheet"]').forEach(function(n){shadow.appendChild(document.importNode(n,true));});
       var app=doc.getElementById('appContent')||doc.body;Array.prototype.slice.call(app.childNodes).forEach(function(n){shadow.appendChild(document.importNode(n,true));});
+      var sourceHeader=shadow.querySelector('header.top');if(sourceHeader)sourceHeader.remove();
+      var sourceNav=shadow.querySelector('nav.tabs');if(sourceNav)sourceNav.style.marginTop='0';
       return sourceScripts(doc,shadow);
     }).then(function(){if(window.toast)toast('✅ تم دمج الدروس والأنشطة التفاعلية داخل أيقونة الدروس');}).catch(function(e){if(h)h.innerHTML='<div class="empty" style="color:#b91c1c">تعذر تحميل ملف الدروس: '+escL(e.message)+'<br><small>تحقق من نشر ملف curriculum-lessons-source.html مع المنصة.</small></div>';});
   };
