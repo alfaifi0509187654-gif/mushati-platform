@@ -191,7 +191,8 @@ function cdLoadClassKey(){
 }
 function cdOpenDB(){return new Promise(function(resolve){var req=indexedDB.open('mashati_db',2);req.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains('state'))db.createObjectStore('state');if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id'});};req.onsuccess=function(e){resolve(e.target.result);};req.onerror=function(){resolve(null);};});}
 function cdLocalState(){try{return JSON.parse(localStorage.getItem('mashati_v1')||'null');}catch(e){return null;}}
-function cdGetState(){return cdOpenDB().then(function(db){if(!db)return cdLocalState();return new Promise(function(resolve){try{var tx=db.transaction('state','readonly');var r=tx.objectStore('state').get('main');r.onsuccess=function(){resolve(r.result||cdLocalState());};r.onerror=function(){resolve(cdLocalState());};}catch(e){resolve(cdLocalState());}});});}
+/* الحالة المشتركة في المنصة الرئيسية هي المصدر المعتمد. IndexedDB احتياطي قديم فقط. */
+function cdGetState(){var shared=cdLocalState();if(shared&&shared.classes)return Promise.resolve(shared);return cdOpenDB().then(function(db){if(!db)return shared;return new Promise(function(resolve){try{var tx=db.transaction('state','readonly');var r=tx.objectStore('state').get('main');r.onsuccess=function(){var cached=r.result||null;resolve(cached&&cached.classes?cached:shared);};r.onerror=function(){resolve(shared);};}catch(e){resolve(shared);}});});}
 function cdSaveState(){var localOk=false;try{localStorage.setItem('mashati_v1',JSON.stringify(CD.state));localOk=true;}catch(e){}return cdOpenDB().then(function(db){if(!db)return localOk;return new Promise(function(resolve){try{var tx=db.transaction('state','readwrite');tx.objectStore('state').put(CD.state,'main');tx.oncomplete=function(){resolve(true);};tx.onerror=function(){resolve(localOk);};}catch(e){resolve(localOk);}});}).then(function(dbOk){return localOk||dbOk;});}
 
 var CD_VIEW_STACK = [];
@@ -222,7 +223,7 @@ function cdCloseModal(){
 window.cdOpenModal = cdOpenModal;
 window.cdCloseModal = cdCloseModal;
 
-function cdCalcAttendance(){var students=CD.students;var att=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey];if(!att||!students.length)return 0;var sessions=Object.keys(att).filter(function(sid){return sid.indexOf('_')!==0;});if(!sessions.length)return 0;var present=0,total=0;students.forEach(function(st){sessions.forEach(function(sid){var rec=att[sid]&&att[sid][st.id];if(!rec)return;total++;if(rec.status==='present'||rec.autoRemote)present++;else if(rec.status==='late')present+=0.5;});});return total>0?Math.round((present/total)*100):0;}
+function cdCalcAttendance(){var students=CD.students;var att=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey];if(!att||!students.length)return 0;var sessions=Object.keys(att).filter(function(sid){return sid.indexOf('_')!==0;});if(!sessions.length)return 0;var present=0,total=students.length*sessions.length;students.forEach(function(st){sessions.forEach(function(sid){var rec=att[sid]&&att[sid][st.id];if(rec&&(rec.status==='present'||rec.autoRemote))present++;else if(rec&&rec.status==='late')present+=0.5;});});return total>0?Math.round((present/total)*100):0;}
 function cdCalcBehavior(){var beh=CD.state&&CD.state.behavior&&CD.state.behavior[CD.classKey];if(!beh)return null;var pos=0,neg=0;Object.keys(beh).forEach(function(sid){Object.keys(beh[sid]||{}).forEach(function(stid){(beh[sid][stid]||[]).forEach(function(x){if(x.delta>0)pos++;else if(x.delta<0)neg++;});});});var total=pos+neg;if(total===0)return null;return Math.round((pos/total)*100);}
 function cdCalcLevel(){if(!CD.students.length)return 0;var total=0;CD.students.forEach(function(st){total+=cdCalcStudentYearWork(st.id).percent||0;});return Math.round(total/CD.students.length);}
 function cdCalcFinalScore(stid){var rec=CD.state&&CD.state.finalExams&&CD.state.finalExams[CD.classKey]&&CD.state.finalExams[CD.classKey][stid];if(!rec)return{value:null,percent:null};return{value:rec.value,percent:Math.round((rec.value/(rec.max||100))*100)};}
@@ -265,7 +266,7 @@ function cdCalcStudentYearWork(stid){
   if(totalPct>=90)grade='ممتاز';else if(totalPct>=80)grade='جيد جداً';else if(totalPct>=70)grade='جيد';else if(totalPct>=60)grade='مقبول';else if(totalPct>0)grade='ضعيف';
   return{yearWorkPercent:ywPct,finalPercent:fe.percent,percent:totalPct,grade:grade};
 }
-function cdCalcStudentAttendance(stid){var att=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey];if(!att)return 100;var sessions=Object.keys(att).filter(function(sid){return sid.indexOf('_')!==0;});if(!sessions.length)return 100;var present=0,total=0;sessions.forEach(function(sid){var rec=att[sid]&&att[sid][stid];if(!rec)return;total++;if(rec.status==='present'||rec.autoRemote)present++;else if(rec.status==='late')present+=0.5;});return total>0?Math.round((present/total)*100):100;}
+function cdCalcStudentAttendance(stid){var att=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey];if(!att)return 0;var sessions=Object.keys(att).filter(function(sid){return sid.indexOf('_')!==0;});if(!sessions.length)return 0;var present=0; sessions.forEach(function(sid){var rec=att[sid]&&att[sid][stid];if(rec&&(rec.status==='present'||rec.autoRemote))present++;else if(rec&&rec.status==='late')present+=0.5;});return Math.round((present/sessions.length)*100);}
 function cdBehaviorSummary(){var beh=CD.state&&CD.state.behavior&&CD.state.behavior[CD.classKey];if(!beh)return{pos:0,neg:0,total:0,sessions:0};var pos=0,neg=0;Object.keys(beh).forEach(function(sid){Object.keys(beh[sid]||{}).forEach(function(stid){(beh[sid][stid]||[]).forEach(function(x){if(x.delta>0)pos++;else if(x.delta<0)neg++;});});});return{pos:pos,neg:neg,total:pos+neg,sessions:Object.keys(beh).length};}
 
 function cdRenderHeader(){if(!CD.section)return;var title=cdEl('cdClassTitle'),name=cdEl('cdClassName');if(title)title.textContent='ثالث ثانوي / '+CD.section;if(name)name.textContent='كيمياء 3 · CHM 301';}
@@ -800,7 +801,7 @@ var CD_TESTS=[
   {name:'مجموعات مخفية',fn:function(){return !Array.from(document.querySelectorAll('.cd-icon-tile')).some(function(t){return t.textContent.indexOf('المجموعات')>=0;});}},
   {name:'دوال المجموعات',fn:function(){return typeof cdGroups==='function';}},
   {name:'بيانات الحضور',fn:function(){return typeof cdAttendance==='function';}},
-  {name:'الهيدر',fn:function(){return document.querySelectorAll('.cd-header .icon-btn').length===2;}},
+  {name:'بنية التبويبات الحالية',fn:function(){return !!document.getElementById('cdTabs')&&document.querySelectorAll('#cdTabs .cd-tab').length===3&&!document.querySelector('.cd-header');}},
   {name:'خط Tajawal',fn:function(){return getComputedStyle(document.body).fontFamily.indexOf('Tajawal')>=0;}},
   {name:'الوضع الفاتح',fn:function(){var bg=getComputedStyle(document.body).backgroundColor;return bg.indexOf('245')>=0||bg.indexOf('246')>=0;}},
   {name:'عرض داخلي',fn:function(){return !!document.getElementById('cdTab-detail');}},
