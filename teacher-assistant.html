@@ -287,19 +287,28 @@ function cdCalcStudentAttendance(stid){var att=CD.state&&CD.state.attendance&&CD
 function cdBehaviorSummary(){var beh=CD.state&&CD.state.behavior&&CD.state.behavior[CD.classKey];if(!beh)return{pos:0,neg:0,total:0,sessions:0};var pos=0,neg=0;Object.keys(beh).forEach(function(sid){Object.keys(beh[sid]||{}).forEach(function(stid){(beh[sid][stid]||[]).forEach(function(x){if(x.delta>0)pos++;else if(x.delta<0)neg++;});});});return{pos:pos,neg:neg,total:pos+neg,sessions:Object.keys(beh).length};}
 
 function cdRenderHeader(){if(!CD.section)return;var title=cdEl('cdClassTitle'),name=cdEl('cdClassName');if(title)title.textContent='ثالث ثانوي / '+CD.section;if(name)name.textContent='كيمياء 3 · CHM 301';}
+function cdGetAvailableClassKeys(){
+  var keys=[],sections=CD.state&&CD.state.sections&&CD.state.sections.g12_s1;
+  if(Array.isArray(sections))sections.forEach(function(sec){var key='g12_s1_'+sec;if(CD.state.classes&&CD.state.classes[key])keys.push(key);});
+  if(!keys.length&&CD.state&&CD.state.classes)Object.keys(CD.state.classes).filter(function(k){return k.indexOf('g12_s1_')===0;}).forEach(function(k){keys.push(k);});
+  if(!keys.length&&CD.classKey)keys=[CD.classKey];
+  return keys;
+}
+function cdClassLabel(classKey){var parts=String(classKey||'').split('_'),sec=parts.length>2?parts.slice(2).join('_'):classKey;return '3 ثانوي '+sec;}
 function cdSwitchClass(classKey){if(!classKey||classKey===CD.classKey)return;sessionStorage.setItem('cd_active_class',classKey);location.href='teacher-assistant.html?class='+encodeURIComponent(classKey);}
 window.cdSwitchClass=cdSwitchClass;
 function cdRenderClassSwitcher(){
   var box=cdEl('cdClassOptions'),hint=cdEl('cdClassSwitcherHint');if(!box||!CD.state)return;
-  var keys=[];
-  var sections=CD.state.sections&&CD.state.sections.g12_s1;
-  if(Array.isArray(sections))sections.forEach(function(sec){var key='g12_s1_'+sec;if(CD.state.classes&&CD.state.classes[key])keys.push(key);});
-  if(!keys.length&&CD.state.classes)Object.keys(CD.state.classes).filter(function(k){return k.indexOf('g12_s1_')===0;}).forEach(function(k){keys.push(k);});
-  if(!keys.length)keys=[CD.classKey];
-  var h='';keys.forEach(function(key){var parts=key.split('_'),sec=parts.length>2?parts.slice(2).join('_'):key,label='3 ثانوي '+sec;h+='<button class="cd-class-option'+(key===CD.classKey?' active':'')+'" onclick="cdSwitchClass(\''+cdEsc(key)+'\')" aria-label="فتح '+cdEsc(label)+'">'+cdEsc(label)+'</button>';});
+  var keys=cdGetAvailableClassKeys(),h='';keys.forEach(function(key){var label=cdClassLabel(key);h+='<button class="cd-class-option'+(key===CD.classKey?' active':'')+'" onclick="cdSwitchClass(\''+cdEsc(key)+'\')" aria-label="فتح '+cdEsc(label)+'">'+cdEsc(label)+'</button>';});
   box.innerHTML=h;
   if(hint)hint.textContent='الشعبة الحالية: 3 ثانوي '+(CD.section||'—')+' · '+CD.students.length+' طالب';
 }
+function cdSetYearWorkClass(classKey){
+  if(!classKey||!CD.state||!CD.state.classes||!CD.state.classes[classKey])return;
+  CD.classKey=classKey;var parts=classKey.split('_');CD.section=parts.length>2?parts.slice(2).join('_'):'—';CD.students=CD.state.classes[classKey]||[];sessionStorage.setItem('cd_active_class',classKey);
+  cdRenderHeader();cdRenderClassSwitcher();cdRenderStats();cdRenderStudentsTab();cdRenderYearWorkTab();cdSwitchTab('yearwork');
+}
+window.cdSetYearWorkClass=cdSetYearWorkClass;
 function cdRenderStats(){
   cdEl('cdStatStudents').textContent=CD.students.length;
   cdEl('cdStatLevel').textContent=cdCalcLevel()+'%';
@@ -321,8 +330,11 @@ function cdRenderStudentsTab(){
 function cdRenderYearWorkTab(){
   var body = cdEl('cdYearWorkBody');
   if(!body) return;
+  var filterKeys=cdGetAvailableClassKeys(),filter='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f0fdfa;border:1px solid #99f6e4;border-radius:11px;padding:10px 12px;margin-bottom:12px"><span style="font-size:12px;font-weight:900;color:#115e59">📊 تصفية الدرجات والتقرير حسب الشعبة</span><select class="cd-yearwork-filter" onchange="cdSetYearWorkClass(this.value)" style="flex:1;min-width:150px;padding:9px 10px;border:1px solid #99f6e4;border-radius:9px;background:#fff;color:#134e4a;font-family:inherit;font-size:12px;font-weight:800">';
+  filterKeys.forEach(function(key){filter+='<option value="'+cdEsc(key)+'"'+(key===CD.classKey?' selected':'')+'>'+cdEsc(cdClassLabel(key))+'</option>';});
+  filter+='</select><span style="font-size:11px;color:#0f766e;font-weight:700">'+CD.students.length+' طالب</span></div>';
   if(!CD.students.length){
-    body.innerHTML='<div class="cd-empty"><div class="icon">🏆</div><h4>لا يوجد طلاب</h4></div>';
+    body.innerHTML=filter+'<div class="cd-empty"><div class="icon">🏆</div><h4>لا يوجد طلاب في الشعبة المختارة</h4></div>';
     return;
   }
   var rows = CD.students.map(function(st){ return {st:st, yw:cdCalcStudentYearWork(st.id)}; });
@@ -330,7 +342,7 @@ function cdRenderYearWorkTab(){
   var sumPct = 0;
   rows.forEach(function(r){ sumPct += r.yw.percent; });
   var avg = rows.length ? Math.round(sumPct / rows.length) : 0;
-  var h = '';
+  var h = filter;
   h += '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:11px;padding:12px 14px;margin-bottom:12px">';
   h += '<div style="font-size:12px;color:#6b7280;font-weight:700;margin-bottom:8px">توزيع أعمال السنة — 60 درجة</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px">';
