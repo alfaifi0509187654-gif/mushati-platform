@@ -147,8 +147,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="cd-stat" onclick="cdOpenStatsDetail('attendance')"><div class="lbl">الحضور<br>والغياب</div><div class="val green" id="cdStatAtt">0%</div></div>
       <div class="cd-stat" onclick="cdOpenStatsDetail('behavior')"><div class="lbl">السلوك</div><div class="val red" id="cdStatBehavior">—</div></div>
     </div>
-    <div style="margin:0 16px 18px;padding:14px 16px;border:1px dashed #99f6e4;border-radius:14px;background:#f0fdfa;color:#115e59;text-align:center;font-size:12.5px;font-weight:800">
-      🧰 تم نقل أدوات الفصل والطلاب إلى أيقونة «الأدوات» في القائمة الرئيسية.
+    <div class="cd-icons-grid">
+      <div class="cd-icon-tile" onclick="cdAction('followups')"><div class="cd-icon-circle">📋</div><div class="lbl">المتابعات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('behavior')"><div class="cd-icon-circle">⭐</div><div class="lbl">السلوك</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('attendance')"><div class="cd-icon-circle">✅</div><div class="lbl">الحضور والغياب</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('learningStyles')"><div class="cd-icon-circle">🧠</div><div class="lbl">أنماط التعلم</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('notes')"><div class="cd-icon-circle">📝</div><div class="lbl">الملاحظات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('tools')"><div class="cd-icon-circle">✨</div><div class="lbl">الأدوات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('lateStudents')"><div class="cd-icon-circle">🕐</div><div class="lbl">الطلاب المتأخرون</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('learningLoss')"><div class="cd-icon-circle">📉</div><div class="lbl">الفاقد التعليمي</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('whiteboard')"><div class="cd-icon-circle">🖍️</div><div class="lbl">السبورة</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('selfTest')"><div class="cd-icon-circle">🧪</div><div class="lbl">فحص الأزرار</div></div>
     </div>
   </section>
   <section id="cdTab-students" class="cd-tab-content" style="display:none">
@@ -869,7 +878,6 @@ async function cdInit(){
     sessionStorage.setItem('cd_active_class',CD.classKey);
     CD.students=(s.classes&&s.classes[CD.classKey])||[];
     cdRenderHeader();cdRenderClassSwitcher();cdRenderStats();
-    try{var requestedTool=new URLSearchParams(location.search).get('tool');if(requestedTool)setTimeout(function(){cdAction(requestedTool);},80);}catch(e){}
     console.log('✅ لوحة الفصل — جاهزة ('+CD.students.length+' طالب)');
   }catch(e){console.error('Init error:',e);cdToast('⚠️ حدث خطأ');}
 }
