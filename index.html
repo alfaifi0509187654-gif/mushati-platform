@@ -68,10 +68,7 @@ var css=document.createElement('style');css.textContent='.gt-bg{position:fixed;i
 (document.head||document.documentElement).appendChild(css);
 })();
 
-</script><style>html.mx-mode body>*:not(#mxRoot){display:none!important}</style><script>if(window.opener&&/[?&](code|error)=/.test(location.search)&&/[?&]state=/.test(location.search)){var q=new URLSearchParams(location.search);try{window.opener.postMessage({od:'code',code:q.get('code'),state:q.get('state'),error:q.get('error_description')||q.get('error')},location.origin);}catch(e){}window.stop&&window.stop();document.documentElement.innerHTML='<body style="font-family:sans-serif;text-align:center;padding:40px">تم، يمكنك إغلاق هذه النافذة<script src="education-bank.js"></script>
-<script src="education-analytics.js"></script>
-</body>';setTimeout(function(){window.close();},400);}
-</script>
+</script><style>html.mx-mode body>*:not(#mxRoot){display:none!important}</style><script>(function(){if(!window.opener||!/[?&](code|error)=/.test(location.search)||!/[?&]state=/.test(location.search))return;var q=new URLSearchParams(location.search);try{window.opener.postMessage({od:'code',code:q.get('code'),state:q.get('state'),error:q.get('error_description')||q.get('error')},location.origin);}catch(e){}window.stop&&window.stop();document.body.innerHTML='<div style="font-family:sans-serif;text-align:center;padding:40px">تم، يمكنك إغلاق هذه النافذة</div>';setTimeout(function(){window.close();},400);})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>منصة المشاطي · معلم الكيمياء</title>
@@ -1011,7 +1008,7 @@ return {
 profile:{teacherName:'عبدالله الفيفي',email:'alfaifi0509187654@gmail.com',school:'مدرسة الثانوية الرازي'},
 sections:{'g12_s1':['أ','ب','ج','د','ه']},
 classes:classes,
-curriculum:{},lessonContents:{},lessonApproval:{},importedLessons:{},contentSources:{},
+curriculum:{},lessonContents:{},lessonApproval:{},importedLessons:{},contentSources:{},lessonPresentations:{},
 schedule:{},attendance:{},studentGrades:{},homework:{},exams:{},research:{},worksheets:{},finalExams:{},
 sessionModes:{},behavior:{},lastLogin:{},chapterAttempts:{},groups:{},groupScores:{},
 labPlans:{},labActiveCourse:'chem3',
@@ -1043,6 +1040,7 @@ if(!state.worksheets) state.worksheets={};
 if(!state.labPlans) state.labPlans={};
 if(!state.importedLessons) state.importedLessons={};
 if(!state.contentSources) state.contentSources={};
+if(!state.lessonPresentations) state.lessonPresentations={};
 /* تفعيل جميع الشعب المدعومة لكل مرحلة موجودة دون المساس ببياناتها الحالية. */
 (function ensureAllSectionsEnabled(){
   state.sections=state.sections||{};
@@ -1788,8 +1786,11 @@ function normalizeText(s){
 window.normalizeText = normalizeText;
 
 function detectStageNum(line){
-  var m = line.match(/(?:المرحلة|الباب|الفصل)\s+(الأولى|الأول|الثانية|الثاني|الثالثة|الثالث|الرابعة|الرابع|الخامسة|الخامس|السادسة|السادس|[1-6١-٦])/);
-  if(!m) return null;
+  var m = line.match(/(?:المرحلة|الباب|الفصل)\s+(الأولى|الأول|الثانية|الثاني|الثالثة|الثالث|الرابعة|الرابع|الخامسة|الخامس|السادسة|السادس|[1-6١-٦])/i);
+  if(!m){
+    var en = line.match(/(?:stage|level|unit)\s*[:\-]?\s*([1-6])/i);
+    return en ? en[1] : null;
+  }
   var map = {'الأول':'1','الأولى':'1','1':'1','١':'1','الثاني':'2','الثانية':'2','2':'2','٢':'2','الثالث':'3','الثالثة':'3','3':'3','٣':'3','الرابع':'4','الرابعة':'4','4':'4','٤':'4','الخامس':'5','الخامسة':'5','5':'5','٥':'5','السادس':'6','السادسة':'6','6':'6','٦':'6'};
   return map[m[1]] || null;
 }
@@ -1825,7 +1826,7 @@ function parseCurriculumText(text){
     }
     var oM = line.match(/^([أ-دa-dA-D])\s*[\)\.\-\u2013]\s*(.+)/);
     if(oM && currentQuestion){ currentQuestion.options.push(oM[2].trim()); return; }
-    var aM = line.match(/الإجابة\s*[:：]\s*([أ-دa-dA-D]|\d+)/);
+    var aM = line.match(/(?:الإجابة|answer|correct\s+answer)\s*[:：]?\s*([أ-دa-dA-D]|\d+)/i);
     if(aM && currentQuestion){
       var L = aM[1].toLowerCase();
       var mp = {'أ':0,'ب':1,'ج':2,'د':3,'a':0,'b':1,'c':2,'d':3};
@@ -2083,6 +2084,17 @@ window.clearQuestionBank = function(){
   renderSettings();
   toast('تم مسح البنك');
 };
+function mxPresentationSlides(content,title){
+  var lines=String(content||'').split(/\n+/).map(function(x){return x.trim();}).filter(Boolean),slides=[];
+  if(!lines.length)return [{title:title||'عرض الدرس',body:'لا يوجد نص مستخرج للمحتوى.'}];
+  for(var i=0;i<lines.length;i+=6)slides.push({title:i?'محتوى الدرس — '+(slides.length+1):(title||'عرض الدرس'),body:lines.slice(i,i+6).join('\n')});
+  return slides;
+}
+function mxPresentationHtml(p){return '<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>'+esc(p.title)+'</title><style>body{font-family:Tahoma,Arial,sans-serif;background:#0f766e;margin:0;color:#0f172a}.deck{max-width:980px;margin:0 auto;padding:30px}.slide{min-height:420px;background:#fff;border-radius:22px;padding:38px;margin:0 0 22px;box-shadow:0 12px 30px #042f2e55;white-space:pre-wrap;line-height:2}.slide h1{color:#0f766e;margin-top:0}.source{font-size:11px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:25px;padding-top:10px}</style><main class="deck"><h1 style="color:#fff">'+esc(p.title)+'</h1>'+p.slides.map(function(s){return '<section class="slide"><h1>'+esc(s.title)+'</h1><div>'+esc(s.body)+'</div><div class="source">المصدر: الملف المرفق — مسودة تحتاج مراجعة المعلم</div></section>';}).join('')+'</main></html>';}
+function buildLessonPresentation(key){var l=state.importedLessons[key],src=l&&state.contentSources[l.sourceId];if(!l)return null;return {id:'pres_'+Date.now().toString(36),lessonKey:key,title:l.title||'عرض درس مستورد',slides:mxPresentationSlides(l.content||src&&src.text,l.title),sourceId:l.sourceId,status:'draft',createdAt:Date.now()};}
+window.generateLessonPresentation=function(key){var p=buildLessonPresentation(key);if(!p){toast('لا يوجد محتوى مستورد لهذا الدرس');return;}state.lessonPresentations[key]=p;save();var blob=new Blob([mxPresentationHtml(p)],{type:'text/html;charset=utf-8'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=(p.title||'عرض-درس').replace(/[^\w\u0600-\u06ff-]+/g,'-')+'.html';a.click();setTimeout(function(){URL.revokeObjectURL(u);},1000);toast('✅ أُنشئ العرض كمسودة من المصدر فقط');};
+window.generateAllLessonPresentations=function(){var n=0;Object.keys(state.importedLessons||{}).forEach(function(k){var p=buildLessonPresentation(k);if(p){state.lessonPresentations[k]=p;n++;}});save();toast(n?'✅ أُنشئت '+n+' عروض كمسودات':'لا توجد دروس مستوردة');showLessonPresentations();};
+window.showLessonPresentations=function(){var ps=Object.keys(state.lessonPresentations||{}).map(function(k){return state.lessonPresentations[k];});if(!ps.length){toast('لم تُنشأ عروض بعد');return;}var h=ps.map(function(p){return '<article style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px;margin-bottom:8px"><b>'+esc(p.title)+'</b><div style="font-size:11px;color:#64748b;margin-top:4px">'+p.slides.length+' شرائح · مسودة · مرتبطة بالمصدر</div><button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="generateLessonPresentation(\''+esc(p.lessonKey)+'\')">⬇ تصدير HTML</button></article>';}).join('');openModal('🎞️ عروض الدروس',h,'<button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>',{large:true});};
 function renderCurriculumSmartPanel(){
   var totalQ = 0, linkedLessons = 0;
   Object.keys(state.questionBank || {}).forEach(function(k){
@@ -2099,6 +2111,8 @@ function renderCurriculumSmartPanel(){
   h += '<button class="btn btn-primary" onclick="document.getElementById(\'currFileInput\').click()">📁 رفع ملف المنهج</button>';
   h += '<button class="btn btn-ghost" onclick="showQuestionBankStats()">📊 إحصائيات بنك الأسئلة</button>';
   h += '<button class="btn btn-ghost" onclick="reviewImportedQuestions()">🧠 مراجعة الأسئلة المقترحة</button>';
+  h += '<button class="btn btn-ghost" onclick="showLessonPresentations()">🎞️ عروض الدروس</button>';
+  h += '<button class="btn btn-ghost" onclick="generateAllLessonPresentations()">✨ توليد العروض تلقائيًا</button>';
   h += '<button class="btn btn-ghost" onclick="clearQuestionBank()">🗑 مسح البنك</button>';
   h += '</div>';
   h += '<div class="grid grid-4">';
