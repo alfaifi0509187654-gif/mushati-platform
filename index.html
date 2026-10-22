@@ -1041,6 +1041,22 @@ if(!state.finalExams) state.finalExams={};
 if(!state.research) state.research={};
 if(!state.worksheets) state.worksheets={};
 if(!state.labPlans) state.labPlans={};
+/* تفعيل جميع الشعب المدعومة لكل مرحلة موجودة دون المساس ببياناتها الحالية. */
+(function ensureAllSectionsEnabled(){
+  state.sections=state.sections||{};
+  state.classes=state.classes||{};
+  if(!state.sections.g12_s1){state.sections.g12_s1=[];}
+  Object.keys(state.sections).forEach(function(groupKey){
+    if(!Array.isArray(state.sections[groupKey]))state.sections[groupKey]=[];
+    ALL_SECTIONS.forEach(function(section){
+      if(state.sections[groupKey].indexOf(section)<0)state.sections[groupKey].push(section);
+      var classKey=groupKey+'_'+section;
+      if(!state.classes[classKey])state.classes[classKey]=[];
+    });
+    state.sections[groupKey].sort(function(a,b){return ALL_SECTIONS.indexOf(a)-ALL_SECTIONS.indexOf(b);});
+  });
+  try{save();}catch(e){console.warn('تعذر حفظ تفعيل الشعب تلقائيًا',e);}
+})();
 if(!state.lessonProgress) state.lessonProgress={};
 if(!state.lessonStats) state.lessonStats={};
 if(!state.lessonConfig) state.lessonConfig={};
