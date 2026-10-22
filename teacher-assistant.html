@@ -137,6 +137,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <button class="cd-tab active" data-tab="general" onclick="cdSwitchTab('general')">عام</button>
   <button class="cd-tab" data-tab="students" onclick="cdSwitchTab('students')">الطلاب</button>
   <button class="cd-tab" data-tab="yearwork" onclick="cdSwitchTab('yearwork')">أعمال السنة <span class="badge" id="cdTabBadge1">0</span></button>
+  <button class="cd-tab" data-tab="tools" onclick="cdSwitchTab('tools')">🧰 الأدوات</button>
 </nav>
 
 <main id="cdMain">
@@ -146,18 +147,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="cd-stat" onclick="cdOpenStatsDetail('level')"><div class="lbl">المستوى<br>العام</div><div class="val blue" id="cdStatLevel">0%</div></div>
       <div class="cd-stat" onclick="cdOpenStatsDetail('attendance')"><div class="lbl">الحضور<br>والغياب</div><div class="val green" id="cdStatAtt">0%</div></div>
       <div class="cd-stat" onclick="cdOpenStatsDetail('behavior')"><div class="lbl">السلوك</div><div class="val red" id="cdStatBehavior">—</div></div>
-    </div>
-    <div class="cd-icons-grid">
-      <div class="cd-icon-tile" onclick="cdAction('followups')"><div class="cd-icon-circle">📋</div><div class="lbl">المتابعات</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('behavior')"><div class="cd-icon-circle">⭐</div><div class="lbl">السلوك</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('attendance')"><div class="cd-icon-circle">✅</div><div class="lbl">الحضور والغياب</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('learningStyles')"><div class="cd-icon-circle">🧠</div><div class="lbl">أنماط التعلم</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('notes')"><div class="cd-icon-circle">📝</div><div class="lbl">الملاحظات</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('tools')"><div class="cd-icon-circle">✨</div><div class="lbl">الأدوات</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('lateStudents')"><div class="cd-icon-circle">🕐</div><div class="lbl">الطلاب المتأخرون</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('learningLoss')"><div class="cd-icon-circle">📉</div><div class="lbl">الفاقد التعليمي</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('whiteboard')"><div class="cd-icon-circle">🖍️</div><div class="lbl">السبورة</div></div>
-      <div class="cd-icon-tile" onclick="cdAction('selfTest')"><div class="cd-icon-circle">🧪</div><div class="lbl">فحص الأزرار</div></div>
     </div>
   </section>
   <section id="cdTab-students" class="cd-tab-content" style="display:none">
@@ -170,6 +159,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;margin:0 16px 12px;overflow:hidden">
       <div style="padding:16px 18px;display:flex;align-items:center;gap:12px"><span>🏆</span><h3 style="font-size:14.5px;font-weight:800;color:#1a1d23;flex:1">أعمال السنة</h3><span style="font-size:11.5px;color:#6b7280;font-weight:700">60 درجة</span></div>
       <div id="cdYearWorkBody" style="padding:14px 16px;border-top:1px solid #e5e7eb"></div>
+    </div>
+  </section>
+  <section id="cdTab-tools" class="cd-tab-content" style="display:none">
+    <div class="cd-icons-grid">
+      <div class="cd-icon-tile" onclick="cdAction('followups')"><div class="cd-icon-circle">📋</div><div class="lbl">المتابعات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('behavior')"><div class="cd-icon-circle">⭐</div><div class="lbl">السلوك</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('attendance')"><div class="cd-icon-circle">✅</div><div class="lbl">الحضور والغياب</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('learningStyles')"><div class="cd-icon-circle">🧠</div><div class="lbl">أنماط التعلم</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('notes')"><div class="cd-icon-circle">📝</div><div class="lbl">الملاحظات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('tools')"><div class="cd-icon-circle">✨</div><div class="lbl">الأدوات</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('lateStudents')"><div class="cd-icon-circle">🕐</div><div class="lbl">الطلاب المتأخرون</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('learningLoss')"><div class="cd-icon-circle">📉</div><div class="lbl">الفاقد التعليمي</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('whiteboard')"><div class="cd-icon-circle">🖍️</div><div class="lbl">السبورة</div></div>
+      <div class="cd-icon-tile" onclick="cdAction('selfTest')"><div class="cd-icon-circle">🧪</div><div class="lbl">فحص الأزرار</div></div>
     </div>
   </section>
   <section id="cdTab-detail" style="display:none">
