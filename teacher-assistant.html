@@ -18,6 +18,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cd-header .icon-btn:active{background:#f0f1f4;transform:scale(.95)}
 .cd-header .title{flex:1;text-align:center;font-size:17px;font-weight:800;color:#1a1d23}
 .cd-header .title small{display:block;font-size:11px;color:#6b7280;font-weight:500;margin-top:2px}
+.cd-class-switcher{margin:14px 16px 12px;padding:16px 16px 14px;background:linear-gradient(135deg,#0f766e,#115e59);border-radius:18px;color:#fff;box-shadow:0 10px 24px -14px rgba(15,118,110,.65)}
+.cd-class-switcher-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cd-class-switcher-head .class-mark{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.cd-class-switcher-head strong{display:block;font-size:16px;font-weight:900}
+.cd-class-switcher-head small{display:block;margin-top:2px;font-size:11px;color:#ccfbf1;font-weight:500}
+.cd-class-options{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.cd-class-options::-webkit-scrollbar{display:none}
+.cd-class-option{min-width:92px;padding:11px 14px;border:1px solid rgba(255,255,255,.28);border-radius:12px;background:rgba(255,255,255,.10);color:#e6fffb;font-size:14px;font-weight:900;white-space:nowrap;text-align:center}
+.cd-class-option.active{background:#fff;color:#0f766e;border-color:#fff;box-shadow:0 5px 14px -8px rgba(0,0,0,.45)}
+.cd-class-option:active{transform:scale(.96)}
 .cd-tabs{display:flex;gap:4px;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:4px;margin:0 16px 14px;overflow-x:auto;scrollbar-width:none}
 .cd-tabs::-webkit-scrollbar{display:none}
 .cd-tab{flex:1;min-width:90px;padding:10px 12px;border-radius:11px;font-size:13px;font-weight:700;color:#6b7280;transition:.2s;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
@@ -31,11 +41,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cd-stat .val{font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1;font-family:'Tajawal',monospace}
 .cd-stat .val.green{color:#16a34a}.cd-stat .val.blue{color:#2563eb}.cd-stat .val.red{color:#dc2626}.cd-stat .val.white{color:#1a1d23}
 .cd-icons-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px 10px;padding:8px 14px 24px}
-.cd-icon-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 4px;border-radius:14px;transition:.2s;cursor:pointer;user-select:none;min-width:0;overflow:hidden;width:100%}
+.cd-icon-tile{display:flex;flex-direction:column;align-items:center;gap:9px;padding:11px 4px;border-radius:14px;transition:.2s;cursor:pointer;user-select:none;min-width:0;overflow:hidden;width:100%}
 .cd-icon-tile:active{background:#f0f1f4;transform:scale(.96)}
-.cd-icon-circle{width:56px;height:56px;border-radius:50%;background:#f0f1f4;display:flex;align-items:center;justify-content:center;font-size:26px;transition:.2s;border:1px solid #e5e7eb;flex-shrink:0}
+.cd-icon-circle{width:64px;height:64px;border-radius:18px;background:linear-gradient(145deg,#ffffff,#e8eef2);display:flex;align-items:center;justify-content:center;font-size:31px;transition:.2s;border:2px solid #d7e2e7;box-shadow:0 5px 12px -7px rgba(15,23,42,.45);flex-shrink:0}
 .cd-icon-tile:active .cd-icon-circle{background:#e5e7eb}
-.cd-icon-tile .lbl{font-size:11.5px;color:#4b5563;font-weight:500;text-align:center;line-height:1.3;min-height:30px;display:flex;align-items:center;justify-content:center;word-break:break-word;overflow-wrap:anywhere;max-width:100%;padding:0 2px}
+.cd-icon-tile .lbl{font-size:12px;color:#1f2937;font-weight:800;text-align:center;line-height:1.35;min-height:30px;display:flex;align-items:center;justify-content:center;word-break:break-word;overflow-wrap:anywhere;max-width:100%;padding:0 2px}
 .cd-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;background:#ffffff;border:1px solid #e5e7eb;margin-bottom:6px;transition:.15s;cursor:pointer}
 .cd-row:active{background:#f0f1f4}
 .cd-row .num{width:32px;height:32px;border-radius:9px;background:#f0f1f4;color:#6b7280;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:12.5px;font-weight:900;flex-shrink:0}
@@ -88,8 +98,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cd-detail-foot:empty{display:none}
 @media(max-width:380px){
   .cd-icons-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px 6px;padding:6px 10px 20px}
-  .cd-icon-circle{width:46px;height:46px;font-size:21px}
-  .cd-icon-tile .lbl{font-size:9.5px;min-height:26px}
+  .cd-icon-circle{width:52px;height:52px;font-size:25px}
+  .cd-icon-tile .lbl{font-size:10.5px;min-height:26px}
   .cd-icon-tile{padding:8px 2px;gap:6px}
   .cd-stat .val{font-size:22px}
   .cd-stat .lbl{font-size:10.5px}
@@ -116,6 +126,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 
 
+<section class="cd-class-switcher" id="cdClassSwitcher" aria-label="اختيار الفصل">
+  <div class="cd-class-switcher-head">
+    <div class="class-mark">🏫</div>
+    <div><strong>الفصل الدراسي</strong><small id="cdClassSwitcherHint">اختر الشعبة لعرض بيانات طلابها</small></div>
+  </div>
+  <div class="cd-class-options" id="cdClassOptions"></div>
+</section>
 <nav class="cd-tabs" id="cdTabs">
   <button class="cd-tab active" data-tab="general" onclick="cdSwitchTab('general')">عام</button>
   <button class="cd-tab" data-tab="students" onclick="cdSwitchTab('students')">الطلاب</button>
@@ -270,6 +287,19 @@ function cdCalcStudentAttendance(stid){var att=CD.state&&CD.state.attendance&&CD
 function cdBehaviorSummary(){var beh=CD.state&&CD.state.behavior&&CD.state.behavior[CD.classKey];if(!beh)return{pos:0,neg:0,total:0,sessions:0};var pos=0,neg=0;Object.keys(beh).forEach(function(sid){Object.keys(beh[sid]||{}).forEach(function(stid){(beh[sid][stid]||[]).forEach(function(x){if(x.delta>0)pos++;else if(x.delta<0)neg++;});});});return{pos:pos,neg:neg,total:pos+neg,sessions:Object.keys(beh).length};}
 
 function cdRenderHeader(){if(!CD.section)return;var title=cdEl('cdClassTitle'),name=cdEl('cdClassName');if(title)title.textContent='ثالث ثانوي / '+CD.section;if(name)name.textContent='كيمياء 3 · CHM 301';}
+function cdSwitchClass(classKey){if(!classKey||classKey===CD.classKey)return;sessionStorage.setItem('cd_active_class',classKey);location.href='teacher-assistant.html?class='+encodeURIComponent(classKey);}
+window.cdSwitchClass=cdSwitchClass;
+function cdRenderClassSwitcher(){
+  var box=cdEl('cdClassOptions'),hint=cdEl('cdClassSwitcherHint');if(!box||!CD.state)return;
+  var keys=[];
+  var sections=CD.state.sections&&CD.state.sections.g12_s1;
+  if(Array.isArray(sections))sections.forEach(function(sec){var key='g12_s1_'+sec;if(CD.state.classes&&CD.state.classes[key])keys.push(key);});
+  if(!keys.length&&CD.state.classes)Object.keys(CD.state.classes).filter(function(k){return k.indexOf('g12_s1_')===0;}).forEach(function(k){keys.push(k);});
+  if(!keys.length)keys=[CD.classKey];
+  var h='';keys.forEach(function(key){var parts=key.split('_'),sec=parts.length>2?parts.slice(2).join('_'):key,label='3 ثانوي '+sec;h+='<button class="cd-class-option'+(key===CD.classKey?' active':'')+'" onclick="cdSwitchClass(\''+cdEsc(key)+'\')" aria-label="فتح '+cdEsc(label)+'">'+cdEsc(label)+'</button>';});
+  box.innerHTML=h;
+  if(hint)hint.textContent='الشعبة الحالية: 3 ثانوي '+(CD.section||'—')+' · '+CD.students.length+' طالب';
+}
 function cdRenderStats(){
   cdEl('cdStatStudents').textContent=CD.students.length;
   cdEl('cdStatLevel').textContent=cdCalcLevel()+'%';
@@ -835,7 +865,7 @@ async function cdInit(){
     var parts=CD.classKey.split('_');CD.section=parts.length>2?parts[2]:'أ';
     sessionStorage.setItem('cd_active_class',CD.classKey);
     CD.students=(s.classes&&s.classes[CD.classKey])||[];
-    cdRenderHeader();cdRenderStats();
+    cdRenderHeader();cdRenderClassSwitcher();cdRenderStats();
     console.log('✅ لوحة الفصل — جاهزة ('+CD.students.length+' طالب)');
   }catch(e){console.error('Init error:',e);cdToast('⚠️ حدث خطأ');}
 }
