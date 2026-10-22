@@ -763,14 +763,13 @@ body.student-mode .fs-badge::after{content:' · وضع الطالب'}
 <div class="brand"><div class="brand-icon">🎓</div><div><div class="brand-name">منصة المشاطي</div><div class="brand-sub">معلم الكيمياء</div></div></div>
 <nav class="nav">
 <button class="nav-btn active" data-page="home">🏠 الرئيسية</button>
-<button class="nav-btn" data-page="tasks">✅ المهام</button>
-<button class="nav-btn" data-page="references">📚 الكتب والمراجع</button>
 <button class="nav-btn" data-page="classes">👥 الفصول والطلاب</button>
 <button class="nav-btn" data-page="education">📖 المنهج</button>
 <button class="nav-btn" data-page="lab">🧪 مختبري</button>
 <button class="nav-btn" data-page="portfolio">🏅 ملف الإنجاز</button>
 <button class="nav-btn" data-page="reports">📊 التقارير</button>
 <button class="nav-btn" data-page="messages">💬 الرسائل</button>
+<button class="nav-btn" data-page="tools">🧰 الأدوات</button>
 <button class="nav-btn" data-page="settings">⚙️ الإعدادات</button>
 </nav>
 <div class="sidebar-foot"><div class="sidebar-avatar" id="sideAvatar">ع</div><div><div class="sidebar-name" id="sideName">أ. عبدالله الفيفي</div><div class="sidebar-role">معلم الكيمياء</div></div></div>
@@ -814,6 +813,7 @@ body.student-mode .fs-badge::after{content:' · وضع الطالب'}
 <div class="page" id="page-portfolio"><div id="portfolioList"></div></div>
 <div class="page" id="page-reports"><div id="reportsContent"></div></div>
 <div class="page" id="page-messages"><div id="msgRoot"></div></div>
+<div class="page" id="page-tools"><div id="toolsPageContent"></div></div>
 <div class="page" id="page-settings">
 <div class="seg-wrap" style="margin-bottom:16px;flex-wrap:wrap">
 <button class="seg-btn" data-settab="account">الحساب</button>
@@ -1081,7 +1081,7 @@ window.updateLabEditBtn=updateLabEditBtn;
 function toggleLabEditMode(){labEditMode=!labEditMode;updateLabEditBtn();renderLab();toast(labEditMode?'✏️ وضع التعديل مُفعّل':'👁️ عاد إلى وضع العرض');}
 window.toggleLabEditMode=toggleLabEditMode;
 
-var PAGES={home:{t:'الرئيسية',s:'لوحة التحكم'},tasks:{t:'المهام',s:'متابعة الإنجاز اليومية'},references:{t:'الكتب والمراجع',s:'مكتبة الملفات التعليمية والمصادر'},classes:{t:'الفصول والطلاب',s:''},education:{t:'المنهج',s:'دروس الكيمياء 3 والعرض البصري'},assistant:{t:'مساعد المعلم',s:'لوحة الفصل ومتابعة الطلاب'},lab:{t:'مختبري',s:'الخطط الفصلية'},portfolio:{t:'ملف الإنجاز',s:'الشهادات'},reports:{t:'التقارير',s:'تحليلية'},settings:{t:'الإعدادات',s:''}};
+var PAGES={home:{t:'الرئيسية',s:'لوحة التحكم'},tasks:{t:'المهام',s:'متابعة الإنجاز اليومية'},references:{t:'الكتب والمراجع',s:'مكتبة الملفات التعليمية والمصادر'},classes:{t:'الفصول والطلاب',s:''},education:{t:'المنهج',s:'دروس الكيمياء 3 والعرض البصري'},assistant:{t:'مساعد المعلم',s:'لوحة الفصل ومتابعة الطلاب'},lab:{t:'مختبري',s:'الخطط الفصلية'},portfolio:{t:'ملف الإنجاز',s:'الشهادات'},reports:{t:'التقارير',s:'تحليلية'},tools:{t:'الأدوات',s:'أدوات الفصل والطلاب'},settings:{t:'الإعدادات',s:''}};
 function navigate(p){if(!PAGES[p])p='home';state.page=p;if(p!=='lab') labEditMode=false;document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-page')===p);});document.querySelectorAll('.page').forEach(function(pg){pg.classList.toggle('active',pg.id==='page-'+p);});if(el('pageTitle'))el('pageTitle').textContent=PAGES[p].t;if(el('pageSub'))el('pageSub').textContent=PAGES[p].s;save();renderAll();updateLabEditBtn();if(window.innerWidth<900)el('sidebar').classList.remove('open');}
 window.navigate=navigate;
 var _mxNavigateClasses=navigate;
@@ -2113,7 +2113,22 @@ window.resetData=resetData;
 (function(){var pf=el('profileForm');if(pf)pf.oninput=function(){state.profile.teacherName=this.teacherName.value;state.profile.email=this.email.value;state.profile.school=this.school.value;save();if(el('sideName'))el('sideName').textContent='أ. '+state.profile.teacherName;if(el('sideAvatar'))el('sideAvatar').textContent=(state.profile.teacherName||'ع').charAt(0);if(el('heroName'))el('heroName').textContent='أ. '+state.profile.teacherName;};})();
 (function(){function bindLabForm(id){var f=el(id);if(!f)return;f.oninput=function(){if(!state.labProfile)state.labProfile={};var P=state.labProfile;['ministry','admin','school','year','semester','grade','subject','teacher','labKeeper','principal'].forEach(function(k){if(this[k])P[k]=this[k].value;}.bind(this));save();};}bindLabForm('labSettingsForm');bindLabForm('labSettingsFormAcademic');bindLabForm('labSettingsFormSign');})();
 
-function renderAll(){try{if(state.page==='home')renderHome();else if(state.page==='tasks'&&window.renderTasksPage)renderTasksPage();else if(state.page==='references'&&window.renderReferencesPage)renderReferencesPage();else if(state.page==='classes')renderClasses();else if(state.page==='education')renderEducation();else if(state.page==='lab')renderLab();else if(state.page==='portfolio')renderPortfolio();else if(state.page==='reports')renderReports();else if(state.page==='settings')renderSettings();updateNotificationBell();updateLabEditBtn();}catch(e){console.error(e);}}
+function renderTools(){
+  var host=el('toolsPageContent');if(!host)return;
+  var keys=[];Object.keys(state.sections||{}).forEach(function(group){(state.sections[group]||[]).forEach(function(sec){var key=group+'_'+sec;if(state.classes&&state.classes[key])keys.push(key);});});
+  if(!keys.length){host.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🧰</div><h4>لا توجد شعب مفعّلة</h4><p>فعّل الشعب من الإعدادات أولاً.</p></div></div>';return;}
+  var h='<div class="hero"><div class="hero-title">🧰 أدوات الفصل والطلاب</div><div class="hero-text">الوصول المباشر إلى أدوات مساعد المعلم مع تحديد الشعبة قبل الفتح.</div></div>';
+  h+='<div class="card"><div class="card-title">اختر الشعبة</div><div class="card-sub">ستفتح الأداة المختارة على بيانات الشعبة المحددة فقط.</div><select id="mxToolsClass" class="form-input" style="max-width:360px">';
+  keys.forEach(function(key){var p=key.split('_'),sec=p.slice(2).join('_');h+='<option value="'+esc(key)+'">3 ثانوي '+esc(sec)+'</option>';});
+  h+='</select></div>';
+  var tools=[['followups','📋','المتابعات'],['behavior','⭐','السلوك'],['attendance','✅','الحضور والغياب'],['learningStyles','🧠','أنماط التعلم'],['notes','📝','الملاحظات'],['tools','✨','أدوات إضافية'],['lateStudents','🕐','الطلاب المتأخرون'],['learningLoss','📉','الفاقد التعليمي'],['whiteboard','🖍️','السبورة'],['selfTest','🧪','فحص الأزرار']];
+  h+='<div class="grid grid-4">';tools.forEach(function(t){h+='<button class="card" style="text-align:center;cursor:pointer;border:1px solid #ccfbf1;background:#fff" onclick="openTeacherTool(\''+t[0]+'\')"><div style="font-size:34px;margin-bottom:8px">'+t[1]+'</div><div style="font-weight:800;color:#0f766e">'+t[2]+'</div><div style="font-size:11px;color:#64748b;margin-top:4px">فتح داخل مساعد المعلم</div></button>';});h+='</div>';
+  host.innerHTML=h;
+}
+function openTeacherTool(tool){var sel=el('mxToolsClass');var ck=sel&&sel.value;if(!ck){toast('اختر الشعبة أولاً');return;}try{sessionStorage.setItem('cd_active_class',ck);}catch(e){}location.href='teacher-assistant.html?class='+encodeURIComponent(ck)+'&tool='+encodeURIComponent(tool);}
+window.renderTools=renderTools;window.openTeacherTool=openTeacherTool;
+
+function renderAll(){try{if(state.page==='home')renderHome();else if(state.page==='tasks'&&window.renderTasksPage)renderTasksPage();else if(state.page==='references'&&window.renderReferencesPage)renderReferencesPage();else if(state.page==='classes')renderClasses();else if(state.page==='education')renderEducation();else if(state.page==='lab')renderLab();else if(state.page==='portfolio')renderPortfolio();else if(state.page==='reports')renderReports();else if(state.page==='tools')renderTools();else if(state.page==='settings')renderSettings();updateNotificationBell();updateLabEditBtn();}catch(e){console.error(e);}}
 function init(){try{var p=PAGES[state.page]?state.page:'home';navigate(p);eduView='list';if(el('sideName'))el('sideName').textContent='أ. '+(state.profile.teacherName||'عبدالله الفيفي');if(el('sideAvatar'))el('sideAvatar').textContent=(state.profile.teacherName||'ع').charAt(0);if(el('heroName'))el('heroName').textContent='أ. '+(state.profile.teacherName||'عبدالله الفيفي');setInterval(updateNotificationBell,60000);updateLabEditBtn();openMediaDB();console.log('✅ منصة المشاطي — جاهزة (معالجة ذكية + بنك أسئلة)');}catch(e){console.error(e);}}
 init();
 function __flushSave(){if(saveTimer){clearTimeout(saveTimer);saveTimer=null;try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}}}
