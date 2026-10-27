@@ -1,0 +1,2 @@
+-- المرحلة الأولى: الحضور عن بُعد التلقائي
+-- النسخة المطبقة موجودة في سجل Supabase migration باسم remote_attendance_phase1.
