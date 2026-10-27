@@ -2024,8 +2024,9 @@ function saveCurriculumOriginal(file,mode){
   save();
   return source;
 }
+function mxCloudReady(){return !!(window.__mx&&window.__mx.isOn&&window.__mx.isOn());}
 function mxSyncExtractedContent(source,parsed,sourcePages,text){
-  if(!cloud()||!source||!source.referenceLocalId)return Promise.resolve({skipped:true});
+  if(!mxCloudReady()||!source||!source.referenceLocalId)return Promise.resolve({skipped:true});
   function waitRef(n){var r=(typeof local==='function'?local():[]).filter(function(x){return x.id===source.referenceLocalId;})[0];if(r&&r.cloudId)return Promise.resolve(r);return n>0?new Promise(function(resolve){setTimeout(function(){waitRef(n-1).then(resolve);},500);}):Promise.reject(new Error('لم يكتمل إنشاء سجل المرجع السحابي'))}
   return waitRef(20).then(function(localRef){var refId=localRef.cloudId,pages=(sourcePages||[]).map(function(p){return{reference_id:refId,page_number:Number(p.pageNumber)||1,text_content:String(p.text||''),confidence:Number(p.confidence||100),ocr_used:!!p.ocr};});
     var lessons=[];Object.keys(state.importedLessons||{}).forEach(function(k){var l=state.importedLessons[k];if(l&&l.sourceId===source.id)lessons.push({reference_id:refId,lesson_key:k,title:l.title||k,content:l.content||'',source_pages:(l.pages||[]).map(function(p){return Number(p.pageNumber)||1;}).filter(function(v,i,a){return a.indexOf(v)===i;}),status:'review'});});
@@ -2108,8 +2109,8 @@ function mxRenderQuestionReview(localRows,cloudRows){
   (cloudRows||[]).forEach(function(q){h+='<article style="background:#f0fdfa;border:1px solid #99f6e4;border-right:4px solid #0d9488;border-radius:10px;padding:10px"><div style="font-size:12.5px;font-weight:800;color:#0f172a">'+(++i)+'. ☁️ '+esc(q.question_text)+'</div><div style="font-size:11px;color:#64748b;margin-top:5px">'+(Array.isArray(q.options)?q.options:[]).map(function(o,j){return String.fromCharCode(65+j)+') '+esc(o);}).join(' · ')+'</div><div style="font-size:10.5px;color:#0f766e;margin-top:6px">محفوظ سحابيًا · الصفحات: '+esc((q.source_pages||[]).join(', ')||'غير محدد')+'</div><div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn btn-primary btn-sm" onclick="mxApproveCloudQuestion(\''+esc(q.id)+'\',\'approved\')">✅ اعتماد سحابي</button><button class="btn btn-danger btn-sm" onclick="mxApproveCloudQuestion(\''+esc(q.id)+'\',\'rejected\')">رفض</button></div></article>';});
   h+='</div>';openModal('🧠 مراجعة بنك الأسئلة',h,'<button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>',{large:true});
 }
-window.reviewImportedQuestions=function(){var rows=[];Object.keys(state.questionBank||{}).forEach(function(k){(state.questionBank[k]||[]).forEach(function(q){if(q.status==='suggested'||q.status==='review')rows.push({key:k,q:q});});});if(cloud()){__mx.rest('mx_reference_questions?select=id,question_text,options,answer_index,explanation,source_pages,status&status=in.(suggested,review)&order=created_at.desc').then(function(r){mxRenderQuestionReview(rows,Array.isArray(r)?r:[]);}).catch(function(){mxRenderQuestionReview(rows,[]);});}else mxRenderQuestionReview(rows,[]);};
-window.mxApproveCloudQuestion=function(id,status){if(!cloud())return toast('⚠️ الاتصال السحابي غير مهيأ');var body={status:status};if(status==='approved'){body.approved_at=new Date().toISOString();body.approved_by=(__mx.sess()||{}).uid||null;}__mx.rest('mx_reference_questions?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:body}).then(function(){toast(status==='approved'?'✅ تم اعتماد السؤال سحابيًا':'تم رفض السؤال سحابيًا');reviewImportedQuestions();}).catch(function(e){toast('⚠️ تعذر تحديث السؤال: '+(e.message||'خطأ'));});};
+window.reviewImportedQuestions=function(){var rows=[];Object.keys(state.questionBank||{}).forEach(function(k){(state.questionBank[k]||[]).forEach(function(q){if(q.status==='suggested'||q.status==='review')rows.push({key:k,q:q});});});if(mxCloudReady()){__mx.rest('mx_reference_questions?select=id,question_text,options,answer_index,explanation,source_pages,status&status=in.(suggested,review)&order=created_at.desc').then(function(r){mxRenderQuestionReview(rows,Array.isArray(r)?r:[]);}).catch(function(){mxRenderQuestionReview(rows,[]);});}else mxRenderQuestionReview(rows,[]);};
+window.mxApproveCloudQuestion=function(id,status){if(!mxCloudReady())return toast('⚠️ الاتصال السحابي غير مهيأ');var body={status:status};if(status==='approved'){body.approved_at=new Date().toISOString();body.approved_by=(__mx.sess()||{}).uid||null;}__mx.rest('mx_reference_questions?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:body}).then(function(){toast(status==='approved'?'✅ تم اعتماد السؤال سحابيًا':'تم رفض السؤال سحابيًا');reviewImportedQuestions();}).catch(function(e){toast('⚠️ تعذر تحديث السؤال: '+(e.message||'خطأ'));});};
 window.approveImportedQuestion=function(key,id){var q=(state.questionBank[key]||[]).filter(function(x){return x.id===id;})[0];if(!q)return;q.status='approved';q.approvedAt=Date.now();save();reviewImportedQuestions();toast('✅ تم اعتماد السؤال');};
 window.rejectImportedQuestion=function(key,id){var q=(state.questionBank[key]||[]).filter(function(x){return x.id===id;})[0];if(!q)return;q.status='rejected';q.rejectedAt=Date.now();save();reviewImportedQuestions();toast('تم رفض السؤال');};
 window.clearQuestionBank = function(){
@@ -2157,6 +2158,14 @@ function parseQuestionBankText(text,chapterIndex){
   }catch(e){}
   /* PDF text extraction may place the four choices on the same line. Split them safely. */
   raw=raw.replace(/\s+(?=(?:[A-Dأبجد])\s*[\)\].:：-])/g,'\n').replace(/\s+(?=(?:الإجابة|الاجابة|answer|correct)\s*[:：-])/ig,'\n');
+  /* بعض ملفات PDF العربية تخرج بصرياً معكوسة: (أ) تصبح )أ، والإجابة تصبح ةباجلإا. */
+  raw=raw.split('\n').map(function(line){
+    var t=line.trim(),arab=/[\u0600-\u06ff]/.test(t),visualReversed=arab&&(/\)\s*[أبجد]/.test(t)||/ةباجإلا|ةلئسلأا|ةلئسلاأ/.test(t)||(/؟/.test(t)&&/[0-9١٢٣٤٥٦٧٨٩٠]/.test(t)));
+    t=visualReversed?t.split('').reverse().join(''):t;
+    return t.replace(/^\.\s*([0-9]+)/,'$1.');
+  }).join('\n');
+  /* فصل أرقام الأسئلة الملتصقة بالنص في PDF النصي مثل: ... .1 السؤال */
+  raw=raw.replace(/(?:^|\s)\.\s*([0-9]{1,3})\s*/g,'\n$1. ').replace(/([^\n])\s+([0-9]{1,3})\.\s+/g,'$1\n$2. ');
   var lines=raw.split('\n').map(function(x){return x.replace(/\s+/g,' ').trim();}).filter(Boolean);
   if(lines.length&&/^(question|السؤال|q)\s*[,؛]/i.test(lines[0])){
     var head=csvCells(lines.shift()).map(function(x){return normalizeText(x);});
@@ -2165,6 +2174,10 @@ function parseQuestionBankText(text,chapterIndex){
   var cur=null,letters='abcd',arabic='أبجد';
   function flush(){if(cur&&cur.q&&cur.options.length>=2)out.push(cur);cur=null;}
   lines.forEach(function(line){
+    var prefixAns=line.match(/^([A-Dأبجد])\s*[:：]\s*(?:الإجابة|الاجابة|answer|correct)/i);
+    if(prefixAns&&cur){var pv=prefixAns[1],pix=/^[A-D]$/i.test(pv)?letters.indexOf(pv.toLowerCase()):arabic.indexOf(pv);if(pix>=0)cur.answer=pix;line='';}
+    var ansInline=line.match(/(?:الإجابة|الاجابة|answer|correct)\s*[:：\-]?\s*([A-Dأبجد])/i);
+    if(ansInline&&cur){var av=ansInline[1],aix=/^[A-D]$/i.test(av)?letters.indexOf(av.toLowerCase()):arabic.indexOf(av);if(aix>=0)cur.answer=aix;line=line.replace(ansInline[0],'').trim();}
     var qm=line.match(/^(?:سؤال\s*)?([0-9]+)[\.\-\)\:：]\s*(.+)$/i)||line.match(/^سؤال\s*[:：]?\s*(.+)$/i);
     var om=line.match(/^(?:[\(\[]?([A-Dأبجد])(?:[\)\].\-:：]|\s+)\s*)(.+)$/i);
     var am=line.match(/^(?:الإجابة|الاجابة|answer|correct)\s*[:：\-]?\s*(.+)$/i);
