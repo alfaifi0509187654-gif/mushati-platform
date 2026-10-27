@@ -1040,6 +1040,8 @@ if(!state.worksheets) state.worksheets={};
 if(!state.labPlans) state.labPlans={};
 if(!state.importedLessons) state.importedLessons={};
 if(!state.contentSources) state.contentSources={};
+if(!Array.isArray(state.analysisDiagnostics)) state.analysisDiagnostics=[];
+
 if(!state.lessonPresentations) state.lessonPresentations={};
 /* تفعيل جميع الشعب المدعومة لكل مرحلة موجودة دون المساس ببياناتها الحالية. */
 (function ensureAllSectionsEnabled(){
@@ -2176,6 +2178,8 @@ function detectQuestionChapter(filename,text,curr){
   var hay=String(filename||'')+' '+String(text||'').slice(0,12000),low=hay.toLocaleLowerCase('ar');
   var explicit=low.match(/(?:الباب|chapter|unit|الفصل)\s*[_\-:#№]?\s*([1-4])/i);
   if(explicit)return Math.max(0,Math.min(3,parseInt(explicit[1],10)-1));
+  var arabicDoor=low.match(/(?:الباب|chapter|unit|الفصل)\s+(الأول|الاول|الثاني|الثانى|الثالث|الرابع)/i),doorWords={'الأول':0,'الاول':0,'الثاني':1,'الثانى':1,'الثالث':2,'الرابع':3};
+  if(arabicDoor&&doorWords[arabicDoor[1]]!==undefined)return doorWords[arabicDoor[1]];
   var names=(curr.chapters||[]).map(function(ch){return String(ch.name||'').toLocaleLowerCase('ar');});
   for(var i=0;i<names.length&&i<4;i++){
     var words=names[i].split(/[\s:،,-]+/).filter(function(w){return w.length>2;});
@@ -2186,28 +2190,52 @@ function detectQuestionChapter(filename,text,curr){
   var best=0;for(var j=1;j<scores.length;j++)if(scores[j]>scores[best])best=j;
   return scores[best]>0?best:0;
 }
+function mxAnalysisLog(entry){
+  state.analysisDiagnostics=Array.isArray(state.analysisDiagnostics)?state.analysisDiagnostics:[];
+  entry=Object.assign({id:'diag_'+Date.now().toString(36),at:new Date().toISOString()},entry||{});
+  state.analysisDiagnostics.unshift(entry);state.analysisDiagnostics=state.analysisDiagnostics.slice(0,100);
+  try{save();}catch(e){};return entry;
+}
+window.mxAnalysisDiagnostics=function(){return (state.analysisDiagnostics||[]).slice();};
+function mxReadTextFile(file){return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(e){resolve({text:String(e.target.result||''),pages:[],ocrUsed:false,stage:'direct_text'});};r.onerror=function(){reject(new Error('تعذر قراءة النص مباشرة'));};r.readAsText(file,'utf-8');});}
+function mxOcrFile(file,stage){return loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file,{onProgress:function(x){toast('⏳ OCR عربي — '+Math.round((x.progress||0)*100)+'%');}});}).then(function(r){r=r||{};r.stage=stage||'ocr';r.ocrUsed=true;return r;});}
+function mxAnalyzeFile(file){
+  var ext=(String(file.name||'').split('.').pop()||'').toLowerCase(),type=file.type||'',isPdf=ext==='pdf'||type==='application/pdf',isText=/^(txt|csv|tsv|md|text|xml|html|json)$/i.test(ext)||/^text\//i.test(type),isImage=/^(png|jpg|jpeg|webp|gif|bmp|tif|tiff)$/i.test(ext)||/^image\//i.test(type),isOffice=/^(doc|docx|ppt|pptx|xls|xlsx|odt|ods)$/i.test(ext),attempts=[];
+  function attempt(name,fn){attempts.push(name);return Promise.resolve().then(fn).then(function(r){r=r||{};r.stage=r.stage||name;if(String(r.text||'').trim())return r;throw new Error('لم يُستخرج نص في مرحلة '+name);});}
+  var chain;
+  if(isText)chain=attempt('direct_text',function(){return mxReadTextFile(file);});
+  else if(isPdf)chain=attempt('pdf_text',function(){return extractCurriculumPdf(file);}).catch(function(e){return attempt('pdf_ocr_fallback',function(){return mxOcrFile(file,'pdf_ocr_fallback');});});
+  else if(isImage||isOffice)chain=attempt(isImage?'image_ocr':'office_ocr',function(){return mxOcrFile(file,isImage?'image_ocr':'office_ocr');});
+  else chain=attempt('generic_text_fallback',function(){return mxReadTextFile(file);});
+  return chain.then(function(r){r.attempts=attempts;return r;}).catch(function(e){var x=new Error((e&&e.message)||'فشل جميع مسارات التحليل');x.attempts=attempts;throw x;});
+}
+function showAnalysisDiagnostics(){
+  var rows=(state.analysisDiagnostics||[]).slice(0,20),h=rows.length?'':'<div class="empty">لا توجد عمليات تحليل مسجلة بعد.</div>';
+  rows.forEach(function(x){h+='<div style="border:1px solid '+(x.ok?'#bbf7d0':'#fecaca')+';background:'+(x.ok?'#f0fdf4':'#fff7f7')+';border-radius:10px;padding:9px;margin-bottom:7px;font-size:11px;line-height:1.7"><b>'+(x.ok?'✅ ':'⚠️ ')+esc(x.file||'ملف')+'</b><br><span>المرحلة: '+esc(x.stage||'—')+' · الباب: '+esc(x.chapter||'—')+' · الأسئلة: '+(x.questions===undefined?'—':x.questions)+'</span><br><small>'+esc(x.message||'')+' · '+esc(x.at||'')+'</small></div>';});
+  openModal('🧪 سجل تشخيص تحليل الملفات',h,'<button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>',{large:true});
+}
+window.showAnalysisDiagnostics=showAnalysisDiagnostics;
 window.handleQuestionBankFile=function(input){
   var file=input&&input.files&&input.files[0];if(!file)return;
-  var curr=ensureCurriculumForQuestionUpload(),name=file.name||'ملف المنهج',ext=(name.split('.').pop()||'').toLowerCase(),source=saveCurriculumOriginal(file,'question_bank_pending');
-  var isPdf=ext==='pdf'||file.type==='application/pdf',isText=/^(txt|csv|tsv|md|text|xml|html|json)$/i.test(ext)||/^text\//i.test(file.type||''),isImage=/^(png|jpg|jpeg|webp|gif|bmp|tif|tiff)$/i.test(ext)||/^image\//i.test(file.type||''),isOffice=/^(doc|docx|ppt|pptx|xls|xlsx|odt|ods)$/i.test(ext);
-  var read;
-  if(isPdf)read=extractCurriculumPdf(file);
-  else if(isImage||isOffice)read=loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file,{onProgress:function(x){toast('⏳ قراءة الملف: '+Math.round((x.progress||0)*100)+'%');}});});
-  else if(isText)read=new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(e){resolve({text:String(e.target.result||''),pages:[],ocrUsed:false});};r.onerror=reject;r.readAsText(file,'utf-8');});
-  else read=Promise.resolve({text:'',pages:[],ocrUsed:false});
-  toast('⏳ جارٍ تحليل الملف وتصنيفه تلقائياً…');
-  read.then(function(result){
+  var curr=ensureCurriculumForQuestionUpload(),name=file.name||'ملف المنهج',source=saveCurriculumOriginal(file,'question_bank_pending');
+  mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:'started',ok:false,message:'بدأ التحليل متعدد المراحل'});
+  toast('⏳ فحص الملف ثم تحليل النص وOCR عند الحاجة…');
+  mxAnalyzeFile(file).then(function(result){
     var chapterIndex=detectQuestionChapter(name,result&&result.text||'',curr),ch=(curr.chapters||[])[chapterIndex]||{name:'الباب '+(chapterIndex+1)},qs=parseQuestionBankText(result&&result.text||'',chapterIndex),key=questionBankChapterKey(chapterIndex),pages=(result&&result.pages)||[];
     qs=qs.map(function(q){q.status='approved';q.source='imported';q.provenance={sourceId:source.id,chapterIndex:chapterIndex,pages:pages.map(function(x){return x.pageNumber;}).filter(Boolean)};return q;});
-    var r=addToQuestionBank(key,qs);state.contentSources=state.contentSources||{};state.contentSources[source.id]={id:source.id,filename:name,text:String(result&&result.text||''),pages:pages,sourceType:'question-bank',createdAt:Date.now()};source.matched=1;source.addedQ=r.added;source.dupQ=r.duplicates;source.status='approved';state.curriculumImports=state.curriculumImports||[];state.curriculumImports.push({id:source.id,filename:name,ts:Date.now(),matched:1,addedQ:r.added,dupQ:r.duplicates,unmatched:Math.max(0,qs.length-r.added-r.duplicates),analyzed:true,type:'question-bank',status:'approved',chapterIndex:chapterIndex,ocrUsed:!!(result&&result.ocrUsed)});save();renderSettings();showQuestionBankUploadReport(name,ch,r,qs.length);if(window.mxSyncExtractedContent)mxSyncExtractedContent(source,{stages:[]},pages,String(result&&result.text||'')).catch(function(){});
-  }).catch(function(e){toast('⚠️ تعذّر تحليل الملف، وتم حفظ الأصل: '+(e.message||'خطأ غير معروف'));renderSettings();});input.value='';
+    var r=addToQuestionBank(key,qs);state.contentSources=state.contentSources||{};state.contentSources[source.id]={id:source.id,filename:name,text:String(result&&result.text||''),pages:pages,sourceType:'question-bank',createdAt:Date.now()};source.matched=1;source.addedQ=r.added;source.dupQ=r.duplicates;source.status='approved';state.curriculumImports=state.curriculumImports||[];state.curriculumImports.push({id:source.id,filename:name,ts:Date.now(),matched:1,addedQ:r.added,dupQ:r.duplicates,unmatched:Math.max(0,qs.length-r.added-r.duplicates),analyzed:true,type:'question-bank',status:'approved',chapterIndex:chapterIndex,ocrUsed:!!(result&&result.ocrUsed)});
+    mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:result.stage,attempts:result.attempts,ok:true,chapter:ch.name,chapterIndex:chapterIndex,questions:qs.length,added:r.added,duplicates:r.duplicates,ocrUsed:!!result.ocrUsed,message:qs.length?'تم استخراج الأسئلة وإضافتها تلقائياً':'تم استخراج النص لكن لم يُعثر على نمط سؤال متعدد الخيارات'});
+    save();renderSettings();showQuestionBankUploadReport(name,ch.name,r,qs.length);if(window.mxSyncExtractedContent)mxSyncExtractedContent(source,{stages:[]},pages,String(result&&result.text||'')).catch(function(){});
+  }).catch(function(e){
+    var msg=(e&&e.message)||'فشل غير معروف';mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:'failed',attempts:e&&e.attempts||[],ok:false,questions:0,message:msg+' — تم حفظ الملف الأصلي دون إضافة أسئلة'});toast('⚠️ تعذر التحليل: '+msg+' — افتح سجل التشخيص للتفاصيل');renderSettings();
+  });input.value='';
 };
 
 function showQuestionBankUploadReport(filename,chapter,rep,total){openModal('✅ تمت إضافة ملف بنك الأسئلة','<div style="text-align:center"><div style="font-size:38px">📚</div><b>'+esc(filename)+'</b><div style="margin:12px 0;color:#0f766e;font-weight:800">الباب: '+esc(chapter)+'</div><div class="grid grid-3"><div class="stat"><b>'+rep.added+'</b><small>أسئلة معتمدة جديدة</small></div><div class="stat"><b>'+rep.duplicates+'</b><small>أسئلة مكررة</small></div><div class="stat"><b>'+Math.max(0,total-rep.added-rep.duplicates)+'</b><small>غير صالحة/غير مقروءة</small></div></div><p style="margin-top:12px;color:#475569;font-size:12px">تم حفظ الملف الأصلي ومصدر الأسئلة، وتدخل الأسئلة المعتمدة مباشرة في تدريب الباب والاختبار العشوائي.</p></div>','<button class="btn btn-primary" onclick="closeModal()">تم</button>');}
 function renderCurriculumSmartPanel(){
   var curr=state.curriculum&&state.curriculum.g12_s1,chs=(curr&&curr.chapters)||CURRICULUM.g12_s1,totalQ=0;
   var rows=(chs||[]).slice(0,4).map(function(ch,i){var n=(state.questionBank[questionBankChapterKey(i)]||[]).filter(function(q){return q&&q.status!=='rejected';}).length;totalQ+=n;return '<div class="mx-curr-door"><span class="mx-curr-num">'+(i+1)+'</span><div><b>الباب '+(i+1)+' — '+esc(ch.name||('الباب '+(i+1)))+'</b><small>'+n+' سؤالاً معتمداً · تدريب مفتوح · اختبار عشوائي</small></div></div>';}).join('');
-  return '<div class="card mx-curr-one"><div class="card-title">📚 المنهج — إضافة ملف وتحويله إلى اختبارات</div><div class="card-sub">ارفع ملفاً واحداً بأي صيغة. سيُحفظ الأصل، يُقرأ بالنص أو OCR العربي، يُصنّف تلقائياً إلى الباب المناسب، وتُضاف الأسئلة المعتمدة مباشرة إلى بنك الباب.</div><label class="mx-curr-upload"><input type="file" id="questionBankFileInput" accept="*/*" onchange="handleQuestionBankFile(this)"><span>📥 إضافة ملف المنهج الآن</span><small>PDF · صور · Word · PowerPoint · Excel · CSV · TXT وجميع الصيغ</small></label><div class="mx-curr-note">لا توجد خطوة مراجعة إجبارية حسب إعدادك. الأسئلة الصالحة تعتمد تلقائياً، والتكرارات تُهمل دون حذف الأسئلة السابقة.</div><div class="mx-curr-doors">'+rows+'</div><div class="mx-curr-total">📊 إجمالي أسئلة بنك الأبواب: <b>'+totalQ+'</b> — الاختبارات من أيقونة «المنهج» ثم «الاختبارات»</div></div>';
+  return '<div class="card mx-curr-one"><div class="card-title">📚 المنهج — إضافة ملف وتحويله إلى اختبارات</div><div class="card-sub">ارفع ملفاً واحداً بأي صيغة. سيُحفظ الأصل، يُقرأ بالنص أو OCR العربي، يُصنّف تلقائياً إلى الباب المناسب، وتُضاف الأسئلة المعتمدة مباشرة إلى بنك الباب.</div><label class="mx-curr-upload"><input type="file" id="questionBankFileInput" accept="*/*" onchange="handleQuestionBankFile(this)"><span>📥 إضافة ملف المنهج الآن</span><small>PDF · صور · Word · PowerPoint · Excel · CSV · TXT وجميع الصيغ</small></label><div class="mx-curr-note">لا توجد خطوة مراجعة إجبارية حسب إعدادك. الأسئلة الصالحة تعتمد تلقائياً، والتكرارات تُهمل دون حذف الأسئلة السابقة.</div><div class="mx-curr-doors">'+rows+'</div><div class="mx-curr-total">📊 إجمالي أسئلة بنك الأبواب: <b>'+totalQ+'</b> — الاختبارات من أيقونة «المنهج» ثم «الاختبارات»</div><button class="btn btn-ghost btn-sm" style="margin-top:9px" onclick="showAnalysisDiagnostics()">🧪 سجل تشخيص التحليل</button></div>';
 }
 
 window.renderCurriculumSmartPanel = renderCurriculumSmartPanel;
