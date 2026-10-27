@@ -45,8 +45,9 @@
     } finally { await worker.terminate(); }
   };
   OCR.extractScannedPdf = async function (file, options) {
-    options = options || {}; var pdfjs = await import(PDF_URL);
-    pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+    options = options || {}; var pdfjs = root.pdfjsLib;
+    if (!pdfjs) { pdfjs = await import(PDF_URL); }
+    if (pdfjs && pdfjs.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
     var pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
     var worker = await workerFor(options), pages = [];
     try {

@@ -1971,12 +1971,23 @@ function readCurriculumPdf(file){
     return file.arrayBuffer().then(function(buf){ return pdfjsLib.getDocument({data:buf}).promise; });
   }).then(function(pdf){
     var pages = [];
-    for(var n=1;n<=pdf.numPages;n++) pages.push(pdf.getPage(n).then(function(page){
-      return page.getTextContent().then(function(content){
-        return content.items.map(function(item){ return item.str || ''; }).join(' ');
-      });
-    }));
-    return Promise.all(pages).then(function(xs){ return xs.join('\n'); });
+    for(var n=1;n<=pdf.numPages;n++) (function(pageNumber){
+      pages.push(pdf.getPage(pageNumber).then(function(page){
+        return page.getTextContent().then(function(content){
+          var text=content.items.map(function(item){ return item.str || ''; }).join(' ').replace(/\s+/g,' ').trim();
+          return {pageNumber:pageNumber,text:text,confidence:text?100:0,ocr:false};
+        });
+      }));
+    })(n);
+    return Promise.all(pages).then(function(xs){ return {text:xs.map(function(p){return p.text;}).filter(Boolean).join('\n'),pages:xs,ocrUsed:false,sourceType:'pdf'}; });
+  });
+}
+function extractCurriculumPdf(file){
+  return readCurriculumPdf(file).then(function(result){
+    if(result.text && result.text.trim().length>=30)return result;
+    return loadCurriculumOcr().then(function(ocr){
+      return ocr.extractScannedPdf ? ocr.extractScannedPdf(file,{scale:2,onProgress:function(p){toast('⏳ OCR PDF: '+Math.round((p.progress||0)*100)+'%');}}) : ocr.extractFile(file,{onProgress:function(p){toast('⏳ OCR PDF: '+Math.round((p.progress||0)*100)+'%');}});
+    });
   });
 }
 function loadCurriculumOcr(){
@@ -2017,7 +2028,7 @@ window.handleCurriculumFile = function(input){
   function preserve(mode){if(originalSaved)return source;originalSaved=true;source=saveCurriculumOriginal(file,mode);return source;}
   function textRead(){return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(e){resolve(String(e.target.result||''));};r.onerror=function(){reject(new Error('تعذّر قراءة الملف'));};r.readAsText(file,'utf-8');});}
   var read;
-  if(isPdf)read=readCurriculumPdf(file).then(function(text){var clean=String(text||'');if(clean.trim().length>=30)return {text:clean,pages:clean.split(/\n+/).map(function(t,i){return {pageNumber:i+1,text:t,confidence:100,ocr:false};}),ocrUsed:false};return loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file,{onProgress:function(p){toast('⏳ OCR: '+Math.round((p.progress||0)*100)+'%');}});});});
+  if(isPdf)read=extractCurriculumPdf(file);
   else if(isImage||isOffice||isJson||isText)read=loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file,{onProgress:function(p){toast('⏳ قراءة الملف: '+Math.round((p.progress||0)*100)+'%');}});});
   else {preserve('stored_for_processing');toast('✅ حُفظ الملف الأصلي — هذه الصيغة تحتاج قارئًا مخصصًا قبل التحليل');input.value='';renderSettings();return;}
   source=preserve(isImage?'ocr_pending':isPdf?'pdf_pending':isOffice?'office_pending':'text_pending');
@@ -2155,7 +2166,7 @@ window.handleQuestionBankFile=function(input){
   var name=file.name||'ملف بنك الأسئلة',ext=(name.split('.').pop()||'').toLowerCase(),source=saveCurriculumOriginal(file,'question_bank_pending');
   var isPdf=ext==='pdf'||file.type==='application/pdf',isText=/^(txt|csv|tsv|md|text|xml|html|json)$/i.test(ext)||/^text\//i.test(file.type||''),isImage=/^(png|jpg|jpeg|webp|gif|bmp|tif|tiff)$/i.test(ext)||/^image\//i.test(file.type||''),isOffice=/^(docx|pptx)$/i.test(ext);
   var read;
-  if(isPdf)read=readCurriculumPdf(file).then(function(t){return {text:t,pages:[],ocrUsed:false};});
+  if(isPdf)read=extractCurriculumPdf(file);
   else if(isImage||isOffice)read=loadCurriculumOcr().then(function(ocr){return ocr.extractFile(file,{onProgress:function(x){toast('⏳ قراءة الملف: '+Math.round((x.progress||0)*100)+'%');}});});
   else if(isText)read=new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(e){resolve({text:String(e.target.result||''),pages:[],ocrUsed:false});};r.onerror=reject;r.readAsText(file,'utf-8');});
   else {toast('✅ حُفظ الملف الأصلي — الصيغة تحتاج قارئاً مخصصاً');input.value='';renderSettings();return;}
