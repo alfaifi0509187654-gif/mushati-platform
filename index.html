@@ -1983,11 +1983,15 @@ function readCurriculumPdf(file){
   });
 }
 function extractCurriculumPdf(file){
-  return readCurriculumPdf(file).then(function(result){
-    if(result.text && result.text.trim().length>=30)return result;
+  function ocrFallback(){
     return loadCurriculumOcr().then(function(ocr){
-      return ocr.extractScannedPdf ? ocr.extractScannedPdf(file,{scale:2,onProgress:function(p){toast('⏳ OCR PDF: '+Math.round((p.progress||0)*100)+'%');}}) : ocr.extractFile(file,{onProgress:function(p){toast('⏳ OCR PDF: '+Math.round((p.progress||0)*100)+'%');}});
+      if(!ocr.extractScannedPdf)throw new Error('محرك OCR لا يدعم PDF في هذه النسخة');
+      return ocr.extractScannedPdf(file,{scale:2,onProgress:function(p){toast('⏳ OCR PDF: '+Math.round((p.progress||0)*100)+'%');}});
     });
+  }
+  return readCurriculumPdf(file).catch(function(){return ocrFallback();}).then(function(result){
+    if(result&&result.text&&result.text.trim().length>=30)return result;
+    return ocrFallback();
   });
 }
 function loadCurriculumOcr(){
@@ -2128,13 +2132,12 @@ function ensureCurriculumForQuestionUpload(){
 }
 function csvCells(line){var out=[],cur='',quote=false;for(var i=0;i<line.length;i++){var c=line[i];if(c==='"'){if(quote&&line[i+1]==='"'){cur+='"';i++;}else quote=!quote;}else if(c===','&&!quote){out.push(cur.trim());cur='';}else cur+=c;}out.push(cur.trim());return out;}
 function parseQuestionBankText(text,chapterIndex){
-  var raw=String(text||'').replace(/\r/g,'').trim(),out=[];
+  var raw=String(text||'').replace(/[\u200e\u200f\u202a-\u202e\ufeff]/g,'').replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).replace(/\r/g,'').trim(),out=[];
   if(!raw)return out;
   try{
     var data=JSON.parse(raw),arr=Array.isArray(data)?data:(data.questions||data.items||data.data||[]);
     if(Array.isArray(arr))arr.forEach(function(x){
-      var opts=x.options||x.choices||[x.a,x.b,x.c,x.d];
-      if(typeof opts==='string')opts=opts.split('|');
+      var opts=x.options||x.choices||[x.a,x.b,x.c,x.d];if(typeof opts==='string')opts=opts.split('|');
       opts=(opts||[]).filter(function(v){return v!==undefined&&v!==null&&String(v).trim()!=='';}).map(String);
       var ans=x.answerIndex!==undefined?x.answerIndex:(x.answer_index!==undefined?x.answer_index:x.answer);
       if(typeof ans==='string'){var letters='abcd';var ai=letters.indexOf(ans.trim().toLowerCase());ans=ai>=0?ai:parseInt(ans,10);}
@@ -2142,21 +2145,23 @@ function parseQuestionBankText(text,chapterIndex){
     });
     if(out.some(function(x){return x.q&&x.options.length>=2;}))return out.filter(function(x){return x.q&&x.options.length>=2;});
   }catch(e){}
-  var lines=raw.split('\n').map(function(x){return x.trim();}).filter(Boolean);
-  if(lines.length&&/^(question|السؤال|q)\s*,/i.test(lines[0])){
+  /* PDF text extraction may place the four choices on the same line. Split them safely. */
+  raw=raw.replace(/\s+(?=(?:[A-Dأبجد])\s*[\)\].:：-])/g,'\n').replace(/\s+(?=(?:الإجابة|الاجابة|answer|correct)\s*[:：-])/ig,'\n');
+  var lines=raw.split('\n').map(function(x){return x.replace(/\s+/g,' ').trim();}).filter(Boolean);
+  if(lines.length&&/^(question|السؤال|q)\s*[,؛]/i.test(lines[0])){
     var head=csvCells(lines.shift()).map(function(x){return normalizeText(x);});
     lines.forEach(function(line){var c=csvCells(line),qi=head.indexOf('question');if(qi<0)qi=head.indexOf('السؤال');if(qi<0)qi=0;var opts=[];['a','b','c','d','option1','option2','option3','option4'].forEach(function(k){var i=head.indexOf(k);if(i>=0&&c[i])opts.push(c[i]);});var ai=head.indexOf('answer');if(ai<0)ai=head.indexOf('الاجابه');var a=ai>=0?c[ai]:'0';if(/^[a-d]$/i.test(a))a='abcd'.indexOf(a.toLowerCase());out.push({q:c[qi]||'',options:opts,answer:parseInt(a,10)||0,exp:''});});return out.filter(function(x){return x.q&&x.options.length>=2;});
   }
-  var cur=null;
+  var cur=null,letters='abcd',arabic='أبجد';
   function flush(){if(cur&&cur.q&&cur.options.length>=2)out.push(cur);cur=null;}
   lines.forEach(function(line){
-    var qm=line.match(/^(?:سؤال\s*)?(\d+)[\.\-\)\:：]\s*(.+)$/i)||line.match(/^سؤال\s*[:：]?\s*(.+)$/i);
+    var qm=line.match(/^(?:سؤال\s*)?([0-9]+)[\.\-\)\:：]\s*(.+)$/i)||line.match(/^سؤال\s*[:：]?\s*(.+)$/i);
     var om=line.match(/^(?:[\(\[]?([A-Dأبجد])(?:[\)\].\-:：]|\s+)\s*)(.+)$/i);
     var am=line.match(/^(?:الإجابة|الاجابة|answer|correct)\s*[:：\-]?\s*(.+)$/i);
     if(qm){flush();cur={q:qm[2]||qm[1],options:[],answer:0,exp:''};}
-    else if(om&&cur){cur.options.push(om[2]);}
-    else if(am&&cur){var v=am[1].trim(),letters='abcd';cur.answer=/^[A-D]$/i.test(v)?letters.indexOf(v.toLowerCase()):parseInt(v,10)||0;}
-    else if(cur&&cur.options.length===0&&line.length>8){cur.q+=(cur.q?' ':'')+line;}
+    else if(om&&cur){var oi=/^[A-D]$/i.test(om[1])?letters.indexOf(om[1].toLowerCase()):arabic.indexOf(om[1]);if(oi>=0){cur.options.push(om[2]);}}
+    else if(am&&cur){var v=am[1].trim(),ai=/^[A-D]$/i.test(v)?letters.indexOf(v.toLowerCase()):arabic.indexOf(v);cur.answer=ai>=0?ai:Math.max(0,(parseInt(v,10)||1)-1);}
+    else if(cur&&cur.options.length===0&&line.length>8&&!/^(المرحلة|stage|level|unit|الباب|الفصل)/i.test(line)){cur.q+=(cur.q?' ':'')+line;}
   });flush();return out;
 }
 window.handleQuestionBankFile=function(input){
