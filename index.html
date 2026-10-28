@@ -2977,7 +2977,20 @@ window.mxCopySQL=function(){var t=MX_SQL;(navigator.clipboard?navigator.clipboar
 window.mxDownloadSQL=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([MX_SQL],{type:'text/plain'}));a.download='mashati-exams-setup.sql';document.body.appendChild(a);a.click();setTimeout(function(){a.remove();},500);};
 
 /* ---------- مزامنة حسابات الطلاب (اسم المستخدم + كلمة المرور مشفّرة) ---------- */
-var srQ={};function syncRoster(ck){var run=function(){return syncRoster0(ck);};var p=(srQ[ck]||Promise.resolve()).then(run,run);srQ[ck]=p;return p;}
+function mxRepairHaniRoster(){
+  var changed=false;
+  Object.keys(state.classes||{}).forEach(function(ck){
+    (state.classes[ck]||[]).forEach(function(s){
+      if(!s||String(s.name||'').trim()!=='هاني ودعاني')return;
+      if(String(s.code||'').trim()==='A36'||String(s.username||'').trim()==='A36'||s.id==='aa4a1d67d162'){
+        s.id='aa4a1d67d162';s.code='A48';s.username='A48';s.studentNo='A48';s.pwStatus='temp';s.pwTemp='1234';changed=true;
+      }
+    });
+  });
+  if(changed)save();
+  return changed;
+}
+var srQ={};function syncRoster(ck){mxRepairHaniRoster();var run=function(){return syncRoster0(ck);};var p=(srQ[ck]||Promise.resolve()).then(run,run);srQ[ck]=p;return p;}
 function syncRoster0(ck){var list=state.classes[ck]||[];var acc=window.stAcc;var miss=list.filter(function(s){var st=s.status||'active';return st!=='archived'&&(!acc||!acc.isNewCode(s.code)||s.username!==s.code||!s.pwStatus);});if(miss.length&&acc){miss.forEach(function(s){acc.ensureLogin(s,s.seq);});save();}
 var gEn=!window.stSet||stSet().groups.enabled,G=gEn?getClassGroups(ck):[],gOf=function(id){for(var i=0;i<G.length;i++)if(G[i].indexOf(id)>=0)return i;return null;};var clsOpen=Object.keys(state.sections).some(function(kk){return (state.sections[kk]||[]).some(function(L){return kk+'_'+L===ck;});});
 var rows=list.filter(function(s){return s.username&&(!acc||acc.isNewCode(s.code));}).map(function(s){return{student_id:s.id,name:s.name,username:String(s.username).trim(),active:(s.status||'active')==='active',group_no:gOf(s.id),reset_n:s.pwResetN||0,temp_pw:s.pwStatus==='temp'?(s.pwTemp||'1234'):null};});
