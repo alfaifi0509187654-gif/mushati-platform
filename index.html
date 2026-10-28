@@ -3959,9 +3959,10 @@ card();setTimeout(card,600);
   function mxEduNorm(v){return String(v||'').replace(/\s+/g,' ').trim().toLowerCase();}
   function mxEnsureChapter2Questions(){
     var key=questionBankChapterKey(1),bank=state.questionBank[key]||(state.questionBank[key]=[]),seen={};
-    bank.forEach(function(q){if(q&&q.q)seen[mxEduNorm(q.q)]=1;});
-    var added=0;
-    MX_EDU_CH2_QUESTIONS.forEach(function(q){var n=mxEduNorm(q.q);if(seen[n])return;bank.push({id:'user-ch2-'+(bank.length+1)+'-'+Date.now(),q:q.q,options:q.options.slice(),answer:q.answer,status:'approved',source:'user-provided',provenance:{sourceId:'user-provided-chapter-2-acids-bases',chapterIndex:1},addedAt:Date.now()});seen[n]=1;added++;});
+    function qKey(q){return mxEduNorm(q.q)+'|'+(q.options||[]).map(mxEduNorm).join('|')+'|'+String(q.answer==null?'':q.answer);}
+    bank.forEach(function(q){if(q&&q.q)seen[qKey(q)]=1;});
+    var added=0,sourceQuestions=MX_EDU_CH2_QUESTIONS.concat(window.__MX_CH2_BANK||[]);
+    sourceQuestions.forEach(function(q){var n=qKey(q);if(seen[n])return;bank.push({id:'imported-ch2-'+(bank.length+1)+'-'+Date.now(),q:q.q,options:q.options.slice(),answer:q.answer,status:'approved',source:q.source||'imported',provenance:q.provenance||{sourceId:'ورقةعملالكيمياء-بالإجابات.pdf',chapterIndex:1,pages:[15,16,17,18,19,20,21]},addedAt:Date.now()});seen[n]=1;added++;});
     if(added)save();
     return {key:key,bank:bank,added:added};
   }
@@ -4050,6 +4051,22 @@ card();setTimeout(card,600);
   window.renderMxOperationLog=renderMxOperationLog;
   setTimeout(function(){try{updateNotificationBell();renderMxOperationLog();}catch(e){}},500);
   setInterval(function(){try{renderMxOperationLog();}catch(e){}},2500);
+})();
+</script>
+<script>
+/* CHAPTER2_BANK_SYNC_V1 — قراءة ملف البنك المعتمد وإضافته إلى التدريب دون استبدال البيانات المحلية */
+(function(){
+  window.__MX_CH2_BANK=[];
+  try{
+    fetch(new URL('chapter2-question-bank.json',document.baseURI).href,{cache:'no-store'})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(x){
+        if(x&&Array.isArray(x.questions)){
+          window.__MX_CH2_BANK=x.questions;
+          try{if(typeof paint==='function')paint();}catch(e){}
+        }
+      }).catch(function(){});
+  }catch(e){}
 })();
 </script>
 </body>
