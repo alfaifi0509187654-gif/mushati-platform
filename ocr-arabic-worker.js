@@ -22,7 +22,20 @@
   function progress(cb, value, label) { if (typeof cb === 'function') cb({ progress: value, status: label || '' }); }
   function decodeXml(s) { var d = document.createElement('textarea'); d.innerHTML = s; return d.value; }
   function xmlText(s) {
-    return decodeXml(String(s || '').replace(/<w:tab\/?\s*>/g, '\t').replace(/<w:br\/?\s*>/g, '\n').replace(/<a:br\/?\s*>/g, '\n').replace(/<[^>]+>/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n\s+/g, '\n').trim());
+    /* يحافظ على فواصل الفقرات والخلايا حتى لا تتحول أسئلة DOCX إلى سطر واحد. */
+    return decodeXml(String(s || '')
+      .replace(/<w:tab\/?\s*>/g, '\t')
+      .replace(/<w:br\/?\s*>/g, '\n')
+      .replace(/<a:br\/?\s*>/g, '\n')
+      .replace(/<\/w:p\s*>/g, '\n')
+      .replace(/<\/w:tr\s*>/g, '\n')
+      .replace(/<\/w:tc\s*>/g, '\t')
+      .replace(/<p:sp\b[^>]*>/g, '\n')
+      .replace(/<\/a:p\s*>/g, '\n')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n[ \t]+/g, '\n')
+      .replace(/\n{3,}/g, '\n\n').trim());
   }
   async function workerFor(options) {
     await loadScript(TESS_URL);
