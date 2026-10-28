@@ -1980,16 +1980,15 @@ function readCurriculumPdf(file){
   return loadCurriculumPdf().then(function(pdfjsLib){
     return file.arrayBuffer().then(function(buf){ return pdfjsLib.getDocument({data:buf}).promise; });
   }).then(function(pdf){
-    var pages = [];
+    /* معالجة متسلسلة: لا نترك صفحة واحدة فاشلة يوقف بقية الصفحات. */
+    var pages = [], chain = Promise.resolve();
     for(var n=1;n<=pdf.numPages;n++) (function(pageNumber){
-      pages.push(pdf.getPage(pageNumber).then(function(page){
-        return page.getTextContent().then(function(content){
-          var text=content.items.map(function(item){ return item.str || ''; }).join(' ').replace(/\s+/g,' ').trim();
-          return {pageNumber:pageNumber,text:text,confidence:text?100:0,ocr:false};
-        });
-      }));
+      chain=chain.then(function(){return pdf.getPage(pageNumber).then(function(page){return page.getTextContent().then(function(content){
+        var text=content.items.map(function(item){ return item.str || ''; }).join(' ').replace(/\s+/g,' ').trim();
+        var row={pageNumber:pageNumber,text:text,confidence:text?100:0,ocr:false};pages.push(row);toast('⏳ قراءة صفحات PDF: '+pageNumber+' / '+pdf.numPages);return row;
+      });});});
     })(n);
-    return Promise.all(pages).then(function(xs){ return {text:xs.map(function(p){return p.text;}).filter(Boolean).join('\n'),pages:xs,ocrUsed:false,sourceType:'pdf'}; });
+    return chain.then(function(){return {text:pages.map(function(p){return p.text;}).filter(Boolean).join('\n'),pages:pages,pageCount:pdf.numPages,ocrUsed:false,sourceType:'pdf'};});
   });
 }
 function extractCurriculumPdf(file){
@@ -2225,7 +2224,7 @@ function mxAnalyzeFile(file){
 }
 function showAnalysisDiagnostics(){
   var rows=(state.analysisDiagnostics||[]).slice(0,20),h=rows.length?'':'<div class="empty">لا توجد عمليات تحليل مسجلة بعد.</div>';
-  rows.forEach(function(x){h+='<div style="border:1px solid '+(x.ok?'#bbf7d0':'#fecaca')+';background:'+(x.ok?'#f0fdf4':'#fff7f7')+';border-radius:10px;padding:9px;margin-bottom:7px;font-size:11px;line-height:1.7"><b>'+(x.ok?'✅ ':'⚠️ ')+esc(x.file||'ملف')+'</b><br><span>المرحلة: '+esc(x.stage||'—')+' · الباب: '+esc(x.chapter||'—')+' · الأسئلة: '+(x.questions===undefined?'—':x.questions)+'</span><br><small>'+esc(x.message||'')+' · '+esc(x.at||'')+'</small></div>';});
+  rows.forEach(function(x){h+='<div style="border:1px solid '+(x.ok?'#bbf7d0':'#fecaca')+';background:'+(x.ok?'#f0fdf4':'#fff7f7')+';border-radius:10px;padding:9px;margin-bottom:7px;font-size:11px;line-height:1.7"><b>'+(x.ok?'✅ ':'⚠️ ')+esc(x.file||'ملف')+'</b><br><span>المرحلة: '+esc(x.stage||'—')+' · الصفحات: '+(x.pageCount===undefined?'—':x.pageCount)+' · الباب: '+esc(x.chapter||'—')+' · الأسئلة: '+(x.questions===undefined?'—':x.questions)+'</span><br><small>'+esc(x.message||'')+' · '+esc(x.at||'')+'</small></div>';});
   openModal('🧪 سجل تشخيص تحليل الملفات',h,'<button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>',{large:true});
 }
 window.showAnalysisDiagnostics=showAnalysisDiagnostics;
@@ -2237,14 +2236,14 @@ window.handleQuestionBankFile=function(input){
   mxAnalyzeFile(file).then(function(result){
     var chapterIndex=detectQuestionChapter(name,result&&result.text||'',curr),ch=(curr.chapters||[])[chapterIndex]||{name:'الباب '+(chapterIndex+1)},qs=parseQuestionBankText(result&&result.text||'',chapterIndex),key=questionBankChapterKey(chapterIndex),pages=(result&&result.pages)||[];
     qs=qs.map(function(q){q.status='approved';q.source='imported';q.provenance={sourceId:source.id,chapterIndex:chapterIndex,pages:pages.map(function(x){return x.pageNumber;}).filter(Boolean)};return q;});
-    var r=addToQuestionBank(key,qs);state.contentSources=state.contentSources||{};state.contentSources[source.id]={id:source.id,filename:name,text:String(result&&result.text||''),pages:pages,sourceType:'question-bank',createdAt:Date.now()};source.matched=1;source.addedQ=r.added;source.dupQ=r.duplicates;source.status=qs.length?'approved':'no_questions';state.curriculumImports=state.curriculumImports||[];state.curriculumImports.push({id:source.id,filename:name,ts:Date.now(),matched:1,addedQ:r.added,dupQ:r.duplicates,unmatched:Math.max(0,qs.length-r.added-r.duplicates),analyzed:true,type:'question-bank',status:qs.length?'approved':'no_questions',chapterIndex:chapterIndex,ocrUsed:!!(result&&result.ocrUsed)});
-    mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:result.stage,attempts:result.attempts,ok:true,sourceOnly:true,chapter:ch.name,chapterIndex:chapterIndex,questions:qs.length,added:r.added,duplicates:r.duplicates,ocrUsed:!!result.ocrUsed,message:qs.length?'تم استخراج الأسئلة من الملف وإضافتها تلقائياً — دون توليد أسئلة':'تم استخراج النص لكن لم يُعثر على نمط سؤال متعدد الخيارات'});
+    var r=addToQuestionBank(key,qs);state.contentSources=state.contentSources||{};state.contentSources[source.id]={id:source.id,filename:name,text:String(result&&result.text||''),pages:pages,sourceType:'question-bank',pageCount:Number(result&&result.pageCount)||pages.length||1,createdAt:Date.now()};source.matched=1;source.addedQ=r.added;source.dupQ=r.duplicates;source.status=qs.length?'approved':'no_questions';state.curriculumImports=state.curriculumImports||[];state.curriculumImports.push({id:source.id,filename:name,ts:Date.now(),matched:1,addedQ:r.added,dupQ:r.duplicates,unmatched:Math.max(0,qs.length-r.added-r.duplicates),analyzed:true,type:'question-bank',status:qs.length?'approved':'no_questions',chapterIndex:chapterIndex,ocrUsed:!!(result&&result.ocrUsed)});
+    mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:result.stage,attempts:result.attempts,pageCount:Number(result&&result.pageCount)||pages.length||1,ok:true,sourceOnly:true,chapter:ch.name,chapterIndex:chapterIndex,questions:qs.length,added:r.added,duplicates:r.duplicates,ocrUsed:!!result.ocrUsed,message:qs.length?'تم استخراج الأسئلة من الملف وإضافتها تلقائياً — دون توليد أسئلة':'تم استخراج النص لكن لم يُعثر على نمط سؤال متعدد الخيارات'});
     save();if(window.__flushSave)window.__flushSave();
     var persisted=false;try{var savedState=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');persisted=!!(savedState&&savedState.questionBank&&savedState.questionBank[key]&&savedState.questionBank[key].some(function(q){return q&&q.provenance&&q.provenance.sourceId===source.id;}));}catch(pe){}
     if(!persisted&&r.added){mxAnalysisLog({file:name,stage:'storage_verification',ok:false,sourceOnly:true,chapter:ch.name,questions:r.added,message:'أُضيفت الأسئلة في الذاكرة لكن تعذر التحقق من وجودها في التخزين المحلي بعد الحفظ'});toast('⚠️ تمت الإضافة مؤقتاً لكن فشل التحقق من الحفظ — خذ نسخة احتياطية وافتح سجل التشخيص');}else if(r.added){mxAnalysisLog({file:name,stage:'storage_verification',ok:true,sourceOnly:true,chapter:ch.name,questions:r.added,message:'تم التحقق من بقاء الأسئلة في بنك الأسئلة المحلي بعد الحفظ'});}
     renderSettings();showQuestionBankUploadReport(name,ch.name,r,qs.length);if(window.mxSyncExtractedContent)mxSyncExtractedContent(source,{stages:[]},pages,String(result&&result.text||'')).catch(function(){});
   }).catch(function(e){
-    var msg=(e&&e.message)||'فشل غير معروف';mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:'failed',attempts:e&&e.attempts||[],ok:false,sourceOnly:true,questions:0,message:msg+' — تم حفظ الملف الأصلي دون إضافة أو توليد أسئلة'});toast('⚠️ تعذر التحليل: '+msg+' — افتح سجل التشخيص للتفاصيل');renderSettings();
+    var msg=(e&&e.message)||'فشل غير معروف';mxAnalysisLog({file:name,size:file.size||0,type:file.type||'غير معروف',stage:'failed',attempts:e&&e.attempts||[],pageCount:0,ok:false,sourceOnly:true,questions:0,message:msg+' — تم حفظ الملف الأصلي دون إضافة أو توليد أسئلة'});toast('⚠️ تعذر التحليل: '+msg+' — افتح سجل التشخيص للتفاصيل');renderSettings();
   });input.value='';
 };
 

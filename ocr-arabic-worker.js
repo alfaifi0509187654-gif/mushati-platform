@@ -58,7 +58,7 @@
         pages.push(await recognizeCanvas(canvas, i, options, worker)); progress(options.onProgress, i / pdf.numPages, 'صفحة ' + i + ' من ' + pdf.numPages);
       }
     } finally { await worker.terminate(); }
-    return { fileName: file.name, pages: pages, text: pages.map(function (p) { return '--- الصفحة ' + p.pageNumber + ' ---\n' + p.text; }).join('\n\n'), ocrUsed: true, sourceType: 'scanned-pdf' };
+    return { fileName: file.name, pages: pages, pageCount: pdf.numPages, text: pages.map(function (p) { return p.text; }).join('\n'), ocrUsed: true, sourceType: 'scanned-pdf' };
   };
   async function extractOffice(file, kind, options) {
     await loadScript(JSZIP_URL); if (!root.JSZip) throw new Error('قارئ المستندات غير متاح');
