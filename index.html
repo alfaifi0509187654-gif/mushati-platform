@@ -3054,7 +3054,7 @@ if(!editAllowed){h=h.replace(/<button[^>]+onclick="(?:mxOpenEditor|mxOpenServer|
         });
       });
     });
-    var chapterIndex=((state.curriculum.g12_s1&&state.curriculum.g12_s1.chapters)||[]).indexOf(ch);
+    var chapterData=((state.curriculum&&state.curriculum.g12_s1)||CURRICULUM.g12_s1||{}),chapterList=Array.isArray(chapterData)?chapterData:(chapterData.chapters||[]),chapterIndex=chapterList.indexOf(ch);
     var ck2=questionBankChapterKey(chapterIndex);
     (state.questionBank[ck2]||[]).forEach(function(q){
       if(q&&q.q&&q.options&&q.options.length>=2&&q.status!=='rejected'&&!seen[qnorm(q.q)]){seen[qnorm(q.q)]=1;out.push({q:q.q,options:q.options.slice(),answer:Math.max(0,Math.min(q.options.length-1,q.answer||0)),source:q.source||'ملف بنك الأسئلة'});}
@@ -3063,7 +3063,7 @@ if(!editAllowed){h=h.replace(/<button[^>]+onclick="(?:mxOpenEditor|mxOpenServer|
   }
   function shuffled(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),x=a[i];a[i]=a[j];a[j]=x;}return a;}
   window.mxOpenChapterTraining=function(chid){
-    var ch=((state.curriculum.g12_s1||{}).chapters||[]).filter(function(x){return x.id===chid;})[0];
+    var baseCurr=((state.curriculum&&state.curriculum.g12_s1)||CURRICULUM.g12_s1||{}),baseChapters=Array.isArray(baseCurr)?baseCurr:(baseCurr.chapters||[]),ch=baseChapters.filter(function(x,i){return x.id===chid||(!x.id&&chid==='curriculum-ch-'+(i+1));})[0];
     if(!ch)return;var pool=chapterPool(stuOpenClass,ch);if(!pool.length){toast('لا توجد أسئلة معتمدة لهذا الباب بعد');return;}
     var A={},done=false;window.__mxTrainAnswers=A;window.__mxTrainPool=pool;
     var h='<div class="mx-training-note">📚 تدريب مفتوح — '+esc(ch.name||'الباب')+' · جميع أسئلة بنك ورق العمل ('+pool.length+' سؤال)</div><div id="mxTrainMsg"></div><div class="mx-training-list">';
@@ -3072,7 +3072,7 @@ if(!editAllowed){h=h.replace(/<button[^>]+onclick="(?:mxOpenEditor|mxOpenServer|
     window.mxSubmitChapterTraining=function(){if(done)return;done=true;var score=pool.reduce(function(n,q,i){return n+(Number(A[i])===q.answer?1:0);},0),pct=Math.round(score*100/pool.length),m=el('mxTrainMsg');if(m)m.innerHTML='<div class="mx-training-result">النتيجة: <b>'+score+' / '+pool.length+'</b> — '+pct+'%</div>';document.querySelectorAll('.mx-training-q').forEach(function(card,i){card.classList.add(Number(A[i])===pool[i].answer?'correct':'wrong');});toast('✅ تم تصحيح التدريب');};
   };
   window.mxOpenChapterExamEditor=function(chid){
-    var ch=((state.curriculum.g12_s1||{}).chapters||[]).filter(function(x){return x.id===chid;})[0];if(!ch)return;
+    var baseCurr=((state.curriculum&&state.curriculum.g12_s1)||CURRICULUM.g12_s1||{}),baseChapters=Array.isArray(baseCurr)?baseCurr:(baseCurr.chapters||[]),ch=baseChapters.filter(function(x,i){return x.id===chid||(!x.id&&chid==='curriculum-ch-'+(i+1));})[0];if(!ch)return;
     mxOpenEditor();var pool=chapterPool(stuOpenClass,ch);ED.kind='new';ED.sourceChapter=chid;ED.chapterPool=pool;ED.questions=pool.slice();ED.title='اختبار '+(ch.name||'الباب');ED.maxGrade=10;ED.testCount=Math.min(40,pool.length);renderEditor();
   };
   window.mxChapterPool=chapterPool;window.mxPickChapter=function(pool,n){var a=pool.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),x=a[i];a[i]=a[j];a[j]=x;}return a.slice(0,Math.max(1,Math.min(Number(n)||a.length,a.length)));};
@@ -3933,8 +3933,57 @@ card();setTimeout(card,600);
     var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='none';
     if(d){d.style.display='block';d.innerHTML='<div class="card"><div class="card-title">'+(title==='الاختبارات'?'📝':title==='الواجبات'?'📋':'📚')+' '+escL(title)+'</div><div class="empty" style="margin-top:18px"><div class="empty-icon">'+(title==='الاختبارات'?'📝':title==='الواجبات'?'📋':'📚')+'</div><h4>لا يوجد محتوى حاليًا</h4><p>سيظهر محتوى هذا القسم عند إضافته من إعدادات المنهج.</p></div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeEmbeddedLessons()">← العودة إلى المنهج</button></div>';}
   };
-  window.openEducationTests=function(){openEmptyCurriculumSection('الاختبارات');};
+  /* لوحة اختبارات المنهج: تربط الزر بالمكوّن الفعلي لا بصفحة فارغة */
+  var MX_EDU_CH2_QUESTIONS=[
+    {q:'محاليل الأحماض تحول لون ورقة تباع الشمس من:',options:['الأزرق إلى الأحمر','الأزرق إلى الأخضر','الأزرق إلى الأصفر','الأحمر إلى الأزرق'],answer:0},
+    {q:'تتفاعل الأحماض مع كربونات الفلز ويتصاعد غاز:',options:['هيدروجين','نيتروجين','ثاني أكسيد الكربون','أكسجين'],answer:2},
+    {q:'مادة كيميائية يمكن أن تحول ورق تباع الشمس من الأحمر إلى الأزرق:',options:['HCl','KCl','CH3COOH','NaOH'],answer:3},
+    {q:'من خواص المحلول القاعدي:',options:['يتكون من قاعدة وملحها','تركيز OH- أعلى من H3O+','محاليلها غير موصلة للكهرباء','تغير لون تباع الشمس للأحمر'],answer:1},
+    {q:'أيون هيدروجين مرتبط مع جزيء ماء برابطة تساهمية تناسقية:',options:['H3O+','H2O','H+','OH-'],answer:0},
+    {q:'تعريف القاعدة حسب نظرية أرهينيوس هي المادة التي:',options:['تنتج H+','تنتج OH-','تمنح زوج إلكترونات','تستقبل زوج إلكترونات'],answer:1},
+    {q:'القاعدة المرافقة لحمض HCN:',options:['H2CN','CN-','HCN','CN2-'],answer:1},
+    {q:'القاعدة المرافقة لحمض H2SO4:',options:['HSO2','HSO2+','HSO4-','SO4^2-'],answer:2},
+    {q:'الحمض المرافق للقاعدة NH3:',options:['NH2','NH-','NH3+','NH4+'],answer:3},
+    {q:'ما هو الصحيح حسب نظرية برونستد لوري؟',options:['القاعدة مادة مستقبلة لأيون الهيدروجين','الحمض مادة مستقبلة لزوج إلكترونات','القاعدة مادة مانحة لأيون الهيدروجين','الحمض مادة مانحة لزوج إلكترونات'],answer:0},
+    {q:'المادة التي تسلك سلوك الحمض والقاعدة معاً تسمى مادة:',options:['الملحية','المنظمة','المتعادلة','المترددة'],answer:3},
+    {q:'المادة المستقبلة لزوج من الإلكترونات يمثل تعريف:',options:['حمض لويس','قاعدة لويس','حمض برونستد لوري','قاعدة برونستد لوري'],answer:0},
+    {q:'أي المركبات التالية يعتبر حمض حسب نظرية لويس؟',options:['NH3','BF3','PCl3','H2O'],answer:1},
+    {q:'أي مما يأتي يعتبر قاعدة لويس؟',options:['HCl','NH3','NaOH','NH4+'],answer:1},
+    {q:'الماء حسب نظرية لويس يعتبر:',options:['حمض','قاعدة','متردد','متعادل'],answer:1}
+  ];
+  function mxEduNorm(v){return String(v||'').replace(/\s+/g,' ').trim().toLowerCase();}
+  function mxEnsureChapter2Questions(){
+    var key=questionBankChapterKey(1),bank=state.questionBank[key]||(state.questionBank[key]=[]),seen={};
+    bank.forEach(function(q){if(q&&q.q)seen[mxEduNorm(q.q)]=1;});
+    var added=0;
+    MX_EDU_CH2_QUESTIONS.forEach(function(q){var n=mxEduNorm(q.q);if(seen[n])return;bank.push({id:'user-ch2-'+(bank.length+1)+'-'+Date.now(),q:q.q,options:q.options.slice(),answer:q.answer,status:'approved',source:'user-provided',provenance:{sourceId:'user-provided-chapter-2-acids-bases',chapterIndex:1},addedAt:Date.now()});seen[n]=1;added++;});
+    if(added)save();
+    return {key:key,bank:bank,added:added};
+  }
+  function mxEduClassKey(){
+    if(stuOpenClass)return stuOpenClass;
+    var ks=Object.keys(state.sections||{}).filter(function(k){return state.sections[k]&&state.sections[k].length;});
+    return ks[0]||'g12_s1_أ';
+  }
+  function mxEducationTestsPanel(){
+    var sync=mxEnsureChapter2Questions(),curriculum=((state.curriculum&&state.curriculum.g12_s1)||CURRICULUM.g12_s1||{}),all=Array.isArray(curriculum)?curriculum:(curriculum.chapters||[]),h='<div class="card mx-edu-tests-panel"><div class="card-title">📝 اختبارات المنهج حسب الأبواب</div><div class="card-sub">التدريب مفتوح ويشمل جميع أسئلة الباب، والاختبار الرسمي يسحب عينة عشوائية حسب إعدادات المعلم.</div><div class="mx-edu-tests-summary">✅ تم ربط بنك الباب الثاني — '+sync.bank.length+' سؤالاً معتمداً</div><div class="mx-chapter-grid">';
+    for(var i=0;i<4;i++){
+      var ch=all[i]||{name:'الباب '+(i+1),lessons:[]};if(!ch.id)ch.id='curriculum-ch-'+(i+1);var has=!!ch.id,pool=has&&window.mxChapterPool?window.mxChapterPool(mxEduClassKey(),ch):[],n=pool.length;
+      var preview=pool.slice(0,3).map(function(q){return '<li>'+esc(q.q)+'</li>';}).join('');
+      var title=i===1?'الباب الثاني اختبار':'الباب '+(i+1)+' — '+esc(ch.name||('الباب '+(i+1)));
+      var train=has&&n?' <button class="btn btn-ghost btn-sm" onclick="mxEducationStartTraining(\''+esc(ch.id)+'\')">🎯 بدء التدريب</button>':' <button class="btn btn-ghost btn-sm" disabled>🎯 التدريب غير متاح</button>';
+      var set=has?'<button class="mx-exam-settings" onclick="mxEducationOpenExam(\''+esc(ch.id)+'\')">⚙️ إعدادات الاختبار</button>':'';
+      h+='<article class="mx-chapter-assess-card '+(i===1?'mx-chapter2-highlight':'')+'"><div class="mx-chapter-head"><div class="mx-door-no">'+(i+1)+'</div><div><b>'+title+'</b><small>'+ (has?'🧠 '+n+' سؤالاً معتمداً':'لا توجد بيانات لهذا الباب')+'</small></div></div><div class="mx-assess-cards"><section class="mx-assess-card training"><div class="mx-assess-icon">🎯</div><div><strong>تدريب</strong><p>متاح 24 ساعة · جميع أسئلة الباب</p></div>'+train+'</section><section class="mx-assess-card formal"><div class="mx-assess-icon">📝</div><div><strong>اختبارات رسمية</strong><p>اختبار مستقل بموعد ومدة يحددها المعلم</p></div>'+set+'</section></div>'+(i===1&&preview?'<details class="mx-question-preview" open><summary>معاينة أسئلة الباب الثاني</summary><ol>'+preview+'</ol></details>':'')+'</article>';
+    }
+    return h+'</div><button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="closeEmbeddedLessons()">← العودة إلى المنهج</button></div>';
+  }
+  window.mxEducationStartTraining=function(chid){stuOpenClass=mxEduClassKey();if(window.mxOpenChapterTraining)window.mxOpenChapterTraining(chid);else toast('⚠️ مكوّن التدريب غير محمّل');};
+  window.mxEducationOpenExam=function(chid){stuOpenClass=mxEduClassKey();if(window.mxOpenChapterExamEditor)window.mxOpenChapterExamEditor(chid);else toast('⚠️ مكوّن الاختبار غير محمّل');};
+  window.openEducationTests=function(){
+    var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='none';if(d){d.style.display='block';d.innerHTML=mxEducationTestsPanel();}
+  };
   window.openEducationAssignments=function(){openEmptyCurriculumSection('الواجبات');};
+
   window.openEducationLibrary=function(){openEmptyCurriculumSection('المكتبة');};
 })();
 </script>
