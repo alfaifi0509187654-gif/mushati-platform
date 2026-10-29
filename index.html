@@ -797,9 +797,9 @@ html:has(.cxs) body{background:linear-gradient(145deg,#f8fafc 0%,#eef2ff 60%,#ec
 #page-classes .card-title::after,#page-education .card-title::after,#page-portfolio .card-title::after,#page-lab .card-title::after{content:"";display:inline-block;width:28px;height:2px;margin-inline-start:8px;vertical-align:middle;background:linear-gradient(90deg,#4f46e5,#0ea5e9);border-radius:99px}
 @media(max-width:760px){#page-classes .card,#page-education .edu-toolbar,#page-education .mx-edu-tests-panel,#page-portfolio .card,#page-lab .lab-toolbar,#page-lab .lab-table{border-radius:14px;box-shadow:0 8px 20px rgba(15,23,42,.06)}#classesGrid>*:hover,#page-education .exam-card:hover,#page-education .mx-assess-card:hover,#page-education .mx-chapter-assess-card:hover{transform:none}}
 </style>
-<style id="mushatiHideLabKeeperPanel">
-/* واجهة مختبري: إخفاء لوحة محضر المختبر فقط مع إبقاء البيانات والمنطق محفوظين. */
-#labEditBtn,.lab-stats-grid,.lab-edit-mode-notice,.lab-view-only-notice,.lab-signatures{display:none!important}
+<style id="mushatiRootLabPanelGuard">
+/* حماية واجهة مختبري: لا تُعرض لوحة محضر المختبر أو عناصر التحرير. */
+#mxLabDash,#labEditBtn,.mx-lab-dash,.lab-stats-grid,.lab-edit-mode-notice,.lab-view-only-notice,.lab-signatures{display:none!important}
 </style>
 </head>
 <body>
@@ -1157,16 +1157,7 @@ window.toggleLabEditMode=toggleLabEditMode;
 var PAGES={home:{t:'الرئيسية',s:'لوحة التحكم'},tasks:{t:'المهام',s:'متابعة الإنجاز اليومية'},references:{t:'الكتب والمراجع',s:'مكتبة الملفات التعليمية والمصادر'},classes:{t:'الفصول والطلاب',s:''},education:{t:'المنهج',s:'دروس الكيمياء 3 والعرض البصري'},assistant:{t:'مساعد المعلم',s:'لوحة الفصل ومتابعة الطلاب'},lab:{t:'مختبري',s:'الخطط الفصلية'},portfolio:{t:'ملف الإنجاز',s:'الشهادات'},reports:{t:'التقارير',s:'تحليلية'},settings:{t:'الإعدادات',s:''}};
 function navigate(p){if(!PAGES[p])p='home';state.page=p;if(p!=='lab') labEditMode=false;document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-page')===p);});document.querySelectorAll('.page').forEach(function(pg){pg.classList.toggle('active',pg.id==='page-'+p);});if(el('pageTitle'))el('pageTitle').textContent=PAGES[p].t;if(el('pageSub'))el('pageSub').textContent=PAGES[p].s;save();renderAll();updateLabEditBtn();if(window.innerWidth<900)el('sidebar').classList.remove('open');}
 window.navigate=navigate;
-var _mxNavigateClasses=navigate;
-navigate=function(p){
-  if(p==='classes'){
-    var firstClass=null;
-    try{for(var groupKey in state.sections){var sections=state.sections[groupKey]||[];if(sections.length){firstClass=groupKey+'_'+sections[0];break;}}
-      if(firstClass){sessionStorage.setItem('cd_active_class',firstClass);location.href='teacher-assistant.html?class='+encodeURIComponent(firstClass);return;}
-    }catch(e){}
-  }
-  return _mxNavigateClasses.apply(this,arguments);
-};
+/* الدمج الداخلي: الانتقال إلى الفصول يبقى داخل index.html ولا يعيد تحميل صفحة خارجية. */
 window.navigate=navigate;
 document.querySelectorAll('.nav-btn').forEach(function(b){b.onclick=function(){navigate(this.getAttribute('data-page'));};});
 document.querySelectorAll('[data-settab]').forEach(function(t){t.onclick=function(){var tab=this.getAttribute('data-settab');document.querySelectorAll('[data-settab]').forEach(function(x){x.classList.remove('active');});this.classList.add('active');document.querySelectorAll('.sett-pane').forEach(function(p){p.style.display=p.getAttribute('data-pane')===tab?'block':'none';});if(tab==='schedule')setTimeout(renderScheduleTab,10);if(tab==='backup')renderStorageMonitor();if(tab==='labSettings')renderLabSettingsPane();};});
@@ -1408,7 +1399,12 @@ function getStuStudents(){return state.classes[stuOpenClass]||[];}
 function openStudentSection(ck){
   if(!ck)return;
   try{sessionStorage.setItem('cd_active_class',ck);}catch(e){}
-  location.href='teacher-assistant.html?class='+encodeURIComponent(ck);
+  state.page='classes';
+  stuOpenClass=ck;
+  stuActiveTab='attendance';
+  attSelectedSession=null;attViewMode='onsite';
+  navigate('classes');
+  renderStudentSection();
 }
 window.openStudentSection=openStudentSection;
 function closeStudentSection(){stuOpenClass=null;stuActiveTab='attendance';attSelectedSession=null;attViewMode='onsite';hwOpenAssignment=null;examOpenQuiz=null;examOpenChapter=null;ywOpenStudent=null;ywFinalExamOpen=false;renderClasses();el('classesView').style.display='block';el('classDetail').style.display='none';}
@@ -1416,15 +1412,20 @@ window.closeStudentSection=closeStudentSection;
 function switchStuTab(k){stuActiveTab=k;if(k!=='homework')hwOpenAssignment=null;if(k!=='exams'){examOpenQuiz=null;examOpenChapter=null;}if(k!=='yearwork'){ywOpenStudent=null;ywFinalExamOpen=false;}renderStudentSection();}
 window.switchStuTab=switchStuTab;
 var classAssistantCss=document.createElement('style');classAssistantCss.textContent='.class-assistant-embed{margin:0 0 18px;background:#0a0e1a;border-radius:18px;overflow:hidden;border:1px solid #1f2937;box-shadow:0 10px 30px rgba(15,23,42,.16)}.class-assistant-embed-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#111827;color:#fff}.class-assistant-embed-head b{display:block;font-size:15px}.class-assistant-embed-head small{display:block;color:#94a3b8;font-size:11px;margin-top:3px}.class-assistant-embed-head span{font-size:11px;color:#5eead4;font-weight:800}.class-assistant-frame{display:block;width:100%;height:980px;border:0;background:#0a0e1a}.class-existing-sections{margin-top:12px}.class-existing-sections-title{font-weight:900;color:#0f766e;margin:0 0 8px;font-size:14px}@media(max-width:700px){.class-assistant-embed-head{align-items:flex-start;flex-direction:column}.class-assistant-embed-head span{font-size:10px}.class-assistant-frame{height:900px}}';document.head.appendChild(classAssistantCss);
+var classesIntegratedCss=document.createElement('style');classesIntegratedCss.textContent='.classes-integrated-shell{border:1px solid #c7d2fe;border-radius:20px;background:#f8fafc;overflow:hidden;box-shadow:0 16px 34px rgba(15,23,42,.10)}.classes-integrated-head{display:flex;align-items:center;gap:14px;padding:14px 18px;background:linear-gradient(100deg,#172554,#4f46e5 64%,#0ea5e9);color:#fff}.classes-integrated-head .btn-ghost{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff}.classes-integrated-title{display:flex;align-items:center;gap:10px;flex:1}.classes-integrated-title b{display:block;font-size:16px}.classes-integrated-title small{display:block;margin-top:2px;color:#dbeafe;font-size:11px}.classes-integrated-mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.16);font-size:20px}.classes-integrated-chem{font:800 14px Georgia,serif;letter-spacing:2px;color:#bfdbfe;white-space:nowrap}.classes-integrated-body{padding:10px;background:linear-gradient(145deg,#eef2ff,#f8fafc)}.class-assistant-frame{height:calc(100vh - 220px);min-height:760px;border-radius:16px;background:#f5f6f8}.classes-integrated-body iframe{border:1px solid #c7d2fe;box-shadow:0 10px 24px rgba(15,23,42,.08)}@media(max-width:700px){.classes-integrated-head{align-items:flex-start;flex-wrap:wrap;padding:12px}.classes-integrated-title{order:2;flex-basis:100%}.classes-integrated-chem{font-size:11px}.classes-integrated-body{padding:6px}.class-assistant-frame{height:calc(100vh - 230px);min-height:720px}}';document.head.appendChild(classesIntegratedCss);
+function mushatiEmbedAssistant(frame){try{var d=frame.contentDocument||frame.contentWindow.document;if(!d)return;d.documentElement.classList.add('mushati-embedded-assistant');var h=d.querySelector('.cd-header');if(h)h.style.display='none';var body=d.body;if(body){body.style.paddingTop='0';body.style.background='#f8fafc';body.style.overflowX='hidden';}var s=d.createElement('style');s.textContent='.mushati-embedded-assistant .cd-header{display:none!important}.mushati-embedded-assistant .cd-class-switcher{margin-top:8px}.mushati-embedded-assistant .cd-tabs{position:sticky;top:0;z-index:20}.mushati-embedded-assistant .cd-class-option.active{background:#eef2ff;color:#3730a3;border-color:#c7d2fe}.mushati-embedded-assistant .cd-tab.active{background:#4f46e5;color:#fff}';d.head.appendChild(s);}catch(e){console.warn('embedded assistant styling skipped',e);}}
 window.addEventListener('message',function(e){if(e.origin!==location.origin||!e.data||!e.data.type)return;var d=e.data;if(d.classKey&&stuOpenClass&&d.classKey!==stuOpenClass)return;if(d.type==='mushati-assistant-back'){closeStudentSection();return;}if(d.type==='mushati-assistant-nav'){if(d.page==='classes')return; if(d.page==='home'||d.page==='assistant'){navigate(d.page==='assistant'?'assistant':'home');return;}navigate(d.page);return;}if(d.type!=='mushati-assistant-open')return;var map={attendance:'attendance',exams:'exams',behavior:'activity',followups:'gami',messages:null,qiyas:'participation',learningStyles:'research',notes:'activity',book:'homework',groups:'attendance',lateStudents:'attendance',learningLoss:'activity',whiteboard:'activity'};if(d.open==='groups')attViewMode='groups';else if(d.open==='attendance')attViewMode=(d.extra&&d.extra.mode==='online'?'online':'onsite');var tab=map[d.open];if(tab){stuActiveTab=tab;renderStudentSection();}else if(d.open==='messages'){navigate('messages');}else if(d.open==='print'){window.print();}});
 function getTodaySessionsForClass(){var parts=splitClassKey(stuOpenClass);if(!parts)return[];var sessions=[];var todayIdx=new Date().getDay();var dayKey=SCHEDULE_DAYS[todayIdx]?SCHEDULE_DAYS[todayIdx].key:null;if(dayKey){SCHEDULE_PERIODS.forEach(function(p){if(getScheduleClass(dayKey,p)===stuOpenClass){var lesson=getAutoLessonForCell(dayKey,p,stuOpenClass);sessions.push({id:'sch-'+dayKey+'-'+p,label:'حصة '+p,date:new Date().toISOString().slice(0,10),lesson:lesson});}});}return sessions;}
 function renderStudentSection(){
   if(!stuOpenClass){renderClasses();return;}
   var parts=splitClassKey(stuOpenClass);
   if(!parts){renderClasses();return;}
-  /* شاشة الفصل تعرض محتوى مساعد المعلم مباشرة دون البطاقات الخارجية المكررة. */
+  /* عرض محتوى الفصل داخل غلاف المنصة مع الحفاظ على تبويبات ومحتوى مساعد المعلم. */
   var h='';
-  h+='<iframe class="class-assistant-frame" title="مساعد المعلم — شعبة '+esc(parts.section)+'" src="teacher-assistant.html?class='+encodeURIComponent(stuOpenClass)+'" loading="eager"></iframe>';
+  h+='<div class="classes-integrated-shell">';
+  h+='<div class="classes-integrated-head"><div><button class="btn btn-ghost btn-sm" onclick="closeStudentSection()">← الفصول والطلاب</button></div><div class="classes-integrated-title"><span class="classes-integrated-mark">👥</span><div><b>الفصول والطلاب</b><small>شعبة '+esc(parts.section)+' · داخل منصة المشاطي</small></div></div><div class="classes-integrated-chem">⚛ · H₂O</div></div>';
+  h+='<div class="classes-integrated-body"><iframe class="class-assistant-frame" title="محتوى الفصل — شعبة '+esc(parts.section)+'" src="teacher-assistant.html?class='+encodeURIComponent(stuOpenClass)+'&embedded=1" loading="eager" onload="mushatiEmbedAssistant(this)"></iframe></div>';
+  h+='</div>';
   el('classDetail').innerHTML=h;
   el('classesView').style.display='none';
   el('classDetail').style.display='block';
@@ -3897,7 +3898,7 @@ card();setTimeout(card,600);
   window.mxLabPrintDashboard=printDash;
   window.mxLabAddEquipment=function(){if(!canEditLab())return notify2('🔒 المشاهد لا يملك التعديل');openModal('➕ إضافة معدة أو مادة','<div class="field"><label>الاسم</label><input id="mxEqName" class="form-input"></div><div class="field"><label>الكمية</label><input id="mxEqQty" class="form-input"></div><div class="field"><label>الحالة</label><select id="mxEqStatus" class="form-input"><option>متوفر</option><option>ناقص</option><option>تالف</option></select></div>','<button class="btn btn-primary" onclick="mxLabSaveEquipment()">💾 حفظ</button><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>');};
   window.mxLabSaveEquipment=function(){if(!canEditLab())return;var n=(el('mxEqName').value||'').trim();if(!n)return notify2('اكتب اسم المعدة');state.labEquipment=state.labEquipment||[];var x={id:'eq_'+Date.now().toString(36),name:n,qty:(el('mxEqQty').value||'').trim()||'—',status:el('mxEqStatus').value,createdAt:Date.now()};state.labEquipment.push(x);save();audit('add_equipment',labActiveCourse,x.id,x);closeModal();renderLab();notify2('✅ تمت إضافة المعدة');};
-  function dashboard(){var root=document.getElementById('labContent');if(!root)return;var old=document.getElementById('mxLabDash');if(old)old.remove();var p=(state.labPlans&&state.labPlans[labActiveCourse]||[]),e=equipment(),ok=p.filter(function(x){return x.available==='available';}).length,ap=p.filter(function(x){return x.approved;}).length;var d=document.createElement('div');d.id='mxLabDash';d.className='card mx-lab-dash';d.innerHTML='<div class="card-title">🧪 لوحة محضر المختبر <span class="badge">'+(canEditLab()?'تحرير مفعّل':'عرض وطباعة فقط')+'</span></div><div class="mx-lab-stats"><div><b>'+p.length+'</b><small>التجارب</small></div><div><b>'+ok+'</b><small>متوفرة</small></div><div><b>'+ap+'</b><small>معتمدة</small></div><div><b>'+e.length+'</b><small>المعدات والمواد</small></div></div><div class="mx-lab-actions"><button class="btn btn-ghost btn-sm" onclick="mxLabPrintDashboard()">🖨️ طباعة اللوحة</button>'+(canEditLab()?'<button class="btn btn-primary btn-sm" onclick="mxLabAddEquipment()">➕ إضافة معدة</button>':'')+'</div><div class="mx-lab-mini"><b>آخر التجارب</b>'+p.slice(0,5).map(function(x){return '<div><span>'+esc2(x.title)+'</span><em>'+esc2(x.available||'—')+'</em></div>';}).join('')+'</div><div class="mx-lab-mini"><b>المعدات والمواد</b>'+e.slice(0,8).map(function(x){return '<div><span>'+esc2(x.name)+'</span><em>'+esc2(x.status||'—')+'</em></div>';}).join('')+'</div>';root.parentNode.insertBefore(d,root);if(cloud())mxLabAuditList(labActiveCourse).then(function(){});}
+  function dashboard(){var old=document.getElementById('mxLabDash');if(old)old.remove();return;}
   var oldLab=window.renderLab;if(oldLab)window.renderLab=function(){var r=oldLab.apply(this,arguments);setTimeout(dashboard,0);return r;};
   var css=document.createElement('style');css.textContent='.mx-lab-dash{margin-bottom:16px;border-top:4px solid #0f766e}.mx-lab-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:12px 0}.mx-lab-stats>div{background:#f0fdfa;border:1px solid #ccfbf1;border-radius:12px;padding:10px;text-align:center}.mx-lab-stats b{display:block;font-size:22px;color:#0f766e}.mx-lab-stats small{font-weight:800;color:#475569}.mx-lab-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.mx-lab-mini{border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px}.mx-lab-mini>b{display:block;color:#0f766e;margin-bottom:4px}.mx-lab-mini div{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px}.mx-lab-mini em{font-style:normal;color:#64748b;font-weight:800}@media(max-width:600px){.mx-lab-stats{grid-template-columns:repeat(2,1fr)}}';document.head.appendChild(css);
   setTimeout(function(){mergeCloud();if(window.renderLab&&state.page==='lab')renderLab();},1800);
