@@ -797,6 +797,10 @@ html:has(.cxs) body{background:linear-gradient(145deg,#f8fafc 0%,#eef2ff 60%,#ec
 #page-classes .card-title::after,#page-education .card-title::after,#page-portfolio .card-title::after,#page-lab .card-title::after{content:"";display:inline-block;width:28px;height:2px;margin-inline-start:8px;vertical-align:middle;background:linear-gradient(90deg,#4f46e5,#0ea5e9);border-radius:99px}
 @media(max-width:760px){#page-classes .card,#page-education .edu-toolbar,#page-education .mx-edu-tests-panel,#page-portfolio .card,#page-lab .lab-toolbar,#page-lab .lab-table{border-radius:14px;box-shadow:0 8px 20px rgba(15,23,42,.06)}#classesGrid>*:hover,#page-education .exam-card:hover,#page-education .mx-assess-card:hover,#page-education .mx-chapter-assess-card:hover{transform:none}}
 </style>
+<style id="mushatiHideLabKeeperPanel">
+/* واجهة مختبري: إخفاء لوحة محضر المختبر فقط مع إبقاء البيانات والمنطق محفوظين. */
+#labEditBtn,.lab-stats-grid,.lab-edit-mode-notice,.lab-view-only-notice,.lab-signatures{display:none!important}
+</style>
 </head>
 <body>
 <div class="app">
