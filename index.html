@@ -4350,7 +4350,30 @@ function cdOpenDB(){return new Promise(function(resolve){var req=indexedDB.open(
 function cdLocalState(){try{return JSON.parse(localStorage.getItem('mashati_v1')||'null');}catch(e){return null;}}
 /* الحالة المشتركة في المنصة الرئيسية هي المصدر المعتمد. IndexedDB احتياطي قديم فقط. */
 function cdGetState(){var shared=cdLocalState();if(shared&&shared.classes)return Promise.resolve(shared);return cdOpenDB().then(function(db){if(!db)return shared;return new Promise(function(resolve){try{var tx=db.transaction('state','readonly');var r=tx.objectStore('state').get('main');r.onsuccess=function(){var cached=r.result||null;resolve(cached&&cached.classes?cached:shared);};r.onerror=function(){resolve(shared);};}catch(e){resolve(shared);}});});}
-function cdSaveState(){var localOk=false;try{localStorage.setItem('mashati_v1',JSON.stringify(CD.state));localOk=true;}catch(e){}return cdOpenDB().then(function(db){if(!db)return localOk;return new Promise(function(resolve){try{var tx=db.transaction('state','readwrite');tx.objectStore('state').put(CD.state,'main');tx.oncomplete=function(){resolve(true);};tx.onerror=function(){resolve(localOk);};}catch(e){resolve(localOk);}});}).then(function(dbOk){return localOk||dbOk;});}
+function cdSaveState(){
+  var localOk=false;
+  /* لوحة الفصول كانت تحفظ نسخة منفصلة محلياً فقط؛ وحفظ المنصة العام كان يستطيع الكتابة فوقها. */
+  try{
+    if(typeof state==='object'&&state) state=Object.assign(state,CD.state);
+    else state=CD.state;
+    localStorage.setItem('mashati_v1',JSON.stringify(CD.state));
+    localOk=true;
+  }catch(e){}
+  return cdOpenDB().then(function(db){
+    if(!db)return localOk;
+    return new Promise(function(resolve){try{var tx=db.transaction('state','readwrite');tx.objectStore('state').put(CD.state,'main');tx.oncomplete=function(){resolve(true);};tx.onerror=function(){resolve(localOk);};}catch(e){resolve(localOk);}});
+  }).then(function(dbOk){
+    if(!(localOk||dbOk))return false;
+    /* إذا كان حساب المعلم متصلاً، ادفع نفس الحالة إلى mx_state قبل إعلان نجاح الحفظ. */
+    if(typeof window.saveDataNow==='function'&&window.__mx&&__mx.isOn&&__mx.isOn()){
+      return window.saveDataNow(true).then(function(r){
+        if(!r||r.cloud===false){cdToast('⚠️ حُفظت محلياً فقط — تعذّر الحفظ السحابي');return false;}
+        return true;
+      },function(){cdToast('⚠️ حُفظت محلياً فقط — تعذّر الحفظ السحابي');return false;});
+    }
+    return true;
+  });
+}
 
 var CD_VIEW_STACK = [];
 function cdOpenModal(title, body, foot){
