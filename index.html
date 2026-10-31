@@ -3414,7 +3414,20 @@ function studentRun(cf,root){
  function paintSettings(){var h=studentReadOnlyNotice()+'<div class="cxs-gcat"><b>👤 بياناتي</b><div class="cxs-g"><span>الاسم</span><b>'+E(S.name||'—')+'</b></div><div class="cxs-g"><span>الحساب</span><b>طالب</b></div></div><div class="cxs-note">تعديل الرقم السري يتم من مسار التفعيل فقط، ولا يمكن تعديل بيانات الفصل أو درجات الطلاب من حساب الطالب.</div>';R(shell('<div class="cxs-set">'+h+'</div>'));pn();}
  window.cxsPref=function(k,v){S.N.prefs=Object.assign({},S.N.prefs);S.N.prefs[k]=v;call('mx_s_prefs',{p_token:S.token,p_prefs:S.N.prefs}).then(function(r){if(r&&!r.error)S.N.prefs=r;badge();}).catch(function(){});badge();};
  window.cxsAskNotif=function(){if(!window.Notification)return;Notification.requestPermission().then(function(){if(S.tab==='settings')paintSettings();else paintHome();});};
- function openC(c){S.conv=c;S.tab='msgs';R(shell('<div class="cxs-chat"><div class="cx-head"><button class="cx-back" onclick="cxsHome()">→</button><div><b>'+cname(c)+'</b><small>'+E(S.name)+'</small></div></div><div class="cx-thread" id="cxThread"></div>'+composer('cxsIn',!S.open||(S.perm&&(c.indexOf('g:')===0?S.perm.group_send===false:S.perm.student_send===false)?'📩 الإرسال للمعلم غير مفعّل حالياً — يمكنك قراءة رسائل المعلم فقط':false))+'</div>',{noTabs:true}));pn();paintT(true);eng2.load(c).then(mark).catch(function(){});var ids=Object.keys(S.N.items).filter(function(k){var n=S.N.items[k];return !n.read_at&&n.link&&n.link.conv===c;}).map(Number);if(ids.length)markN(ids);}
+ function openC(c){
+  S.conv=c;S.tab='msgs';
+  /* لا نرسم المحادثة من قيمة صلاحية قديمة؛ نحدّث الصلاحية وحالة الشعبة أولاً. */
+  var draw=function(){
+   var blocked=S.open===false||(S.perm&&(c.indexOf('g:')===0?S.perm.group_send===false:S.perm.student_send===false)?'📩 الإرسال للمعلم غير مفعّل حالياً — يمكنك قراءة رسائل المعلم فقط':false);
+   R(shell('<div class="cxs-chat"><div class="cx-head"><button class="cx-back" onclick="cxsHome()">→</button><div><b>'+cname(c)+'</b><small>'+E(S.name)+'</small></div></div><div class="cx-thread" id="cxThread"></div>'+composer('cxsIn',blocked)+'</div>',{noTabs:true}));
+   pn();paintT(true);eng2.load(c).then(mark).catch(function(){});
+   var ids=Object.keys(S.N.items).filter(function(k){var n=S.N.items[k];return !n.read_at&&n.link&&n.link.conv===c;}).map(Number);if(ids.length)markN(ids);
+  };
+  Promise.all([
+   call('mx_s_msg_perm',{p_token:S.token}).then(function(r){if(r&&!r.error)S.perm=r;}),
+   call('mx_s_inbox',{p_token:S.token}).then(function(r){if(r&&!r.error){S.open=r.open!==false;S.name=r.name||S.name;S.convs=r.convs||S.convs;}})
+  ]).then(draw,draw);
+ }
  window.cxsOpen=openC;window.cxsHome=function(){S.conv=null;cxsTab('msgs');inbox();};
  function paintT(force){var th=document.getElementById('cxThread');if(!th||!S.conv)return;var fix=stickBottom(th,force);var cv=eng2.conv(S.conv);th.innerHTML=cv.loaded||eng2.list(S.conv).length?bubbles(eng2.list(S.conv),cv.peer,S.conv.indexOf('g:')===0):'<div class="cx-empty">⏳ جارٍ التحميل…</div>';fix();}
  var mT=null;function mark(){if(!S.conv||document.hidden)return;var c0=S.conv,cv=eng2.conv(c0);if(!cv.max)return;clearTimeout(mT);mT=setTimeout(function(){call('mx_s_read',{p_token:S.token,p_conv:c0,p_seq:cv.max}).then(function(){inbox();}).catch(function(){});},400);}
