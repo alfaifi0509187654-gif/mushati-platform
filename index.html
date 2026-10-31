@@ -3364,7 +3364,7 @@ function studentRun(cf,root){
  window.cxsLogout=function(){if(confirm('تسجيل الخروج؟'))logout(false);};
  function cname(c){return c.indexOf('dm:')===0?'👨‍🏫 المعلم':'👥 مجموعتي ('+(+c.slice(2)+1)+')';}
  function msgUnread(){var t=0;S.convs.forEach(function(c){t+=c.unread||0;});return t;}
- function inbox(){if(!S.token)return Promise.resolve();return call('mx_s_inbox',{p_token:S.token}).then(function(r){if(r.error==='session')return logout(true);S.name=r.name||S.name;S.open=r.open!==false;S.convs=r.convs||[];S.convs.forEach(function(c){srt.sub(c.topic,function(){onSig(c.conv);});});if(!S.conv&&S.tab==='msgs')paintHome();else paintTabsBadge();}).catch(function(){S.net=false;pn();});}
+ function inbox(){if(!S.token)return Promise.resolve();return call('mx_s_inbox',{p_token:S.token}).then(function(r){if(r.error==='session')return logout(true);S.name=r.name||S.name;S.open=r.open!==false;S.convs=r.convs||[];S.convs.forEach(function(c){srt.sub(c.topic,function(){onSig(c.conv);});});if(!S.conv&&S.tab==='msgs')paintHome();else if(S.conv&&S.tab==='msgs')openC(S.conv);else paintTabsBadge();}).catch(function(){S.net=false;pn();});}
  function onSig(c){inbox();if(S.conv===c)eng2.load(c).then(mark).catch(function(){});}
  /* ---------- الإشعارات المركزية ---------- */
  function muted(n){var p=S.N.prefs||{};if(n.kind&&n.kind.indexOf('grade')===0&&p.grades===false)return true;if(n.link&&n.link.group&&p.group===false)return true;return false;}
@@ -3387,7 +3387,7 @@ function studentRun(cf,root){
  window.cxsOpenN=openN;
  function route(link,nid){if(nid&&S.N.items[nid])markN([+nid]);else if(nid)call('mx_s_notif_read',{p_token:S.token,p_ids:[+nid]}).then(nfetch).catch(function(){});S.bell=false;if(link.view==='chat'&&link.conv){S.tab='msgs';openC(link.conv);}else if(link.view==='grades'){S.hl=link.item||null;cxsTab('grades');}else cxsTab('home');}
  /* ---------- الصفحات ---------- */
- function start(){S.conv=null;S.tab='home';paintMain();loadPublicContent();remoteAttendanceStart();call('mx_s_msg_perm',{p_token:S.token}).then(function(r){if(r&&!r.error)S.perm=r;}).catch(function(){});inbox();nfetch().then(function(){if(goParam){var g=goParam,nid=new URLSearchParams(location.search).get('nid');goParam=null;try{history.replaceState(null,'',location.pathname+'?chat=1'+location.hash);}catch(e){}route(g,nid);}});}
+ function start(){S.conv=null;S.tab='home';paintMain();loadPublicContent();remoteAttendanceStart();call('mx_s_msg_perm',{p_token:S.token}).then(function(r){if(r&&!r.error){S.perm=r;if(S.conv&&S.tab==='msgs')openC(S.conv);}}).catch(function(){});inbox();nfetch().then(function(){if(goParam){var g=goParam,nid=new URLSearchParams(location.search).get('nid');goParam=null;try{history.replaceState(null,'',location.pathname+'?chat=1'+location.hash);}catch(e){}route(g,nid);}});}
  window.cxsTab=function(t){S.tab=t;S.conv=null;if(t==='home')paintMain();else if(t==='msgs')paintHome();else if(t==='grades')paintGrades();else if(t==='reports')paintStudentReports();else if(t==='content')paintStudentContent();else if(t==='exams')paintStudentExams();else if(t==='assignments')paintStudentAssignments();else if(t==='bank')paintStudentBank();else if(t==='library')paintStudentLibrary();else if(t==='lab')paintStudentLab();else paintSettings();};
  function examUrl(id){return location.origin+location.pathname+'?mx='+id+'#'+btoa(unescape(encodeURIComponent(JSON.stringify({u:cf.u,k:cf.k}))));}
  function studentReadOnlyNotice(){return '<div class="mxs-note ok">👁️ وضع العرض فقط — لا يمكن تعديل بيانات الطلاب أو بيانات الفصل من حساب الطالب.</div>';}
