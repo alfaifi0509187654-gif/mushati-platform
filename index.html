@@ -3591,9 +3591,11 @@ function localFlush(){var json=JSON.stringify(state);localStorage.setItem(STORAG
 function saveNow(silent){if(busy)return Promise.resolve();busy=true;paint();var res={local:false,cloud:null,onedrive:null},json;
  try{json=localFlush();res.local=true;}catch(e){busy=false;paint();toast('⚠️ فشل الحفظ: '+e.message);return Promise.resolve(res);}
  var s=sig(),p=Promise.resolve();
- if(cloudOn())p=p.then(function(){return pack(json);}).then(function(pk){return X.rpc('mx_t_state_save',{p_data:pk.data,p_encoding:pk.enc,p_client_saved_at:new Date().toISOString()}).then(function(r){if(!r||r.error)throw new Error((r&&r.error)||'لا استجابة');if(r.bytes!==pk.data.length)throw new Error('حجم النسخة على الخادم لا يطابق');res.cloud=r.saved_at;});}).catch(function(e){res.cloud=false;res.cloudErr=e.message;});
- if(window.odIsReady&&odIsReady()&&window.odPushNow)p=p.then(function(){return odPushNow().then(function(){res.onedrive=true;},function(){res.onedrive=false;});});
- if(window.mxGradeScanNow)try{mxGradeScanNow();}catch(e){}
+ var recoveryVersion=window.mxClassRecoveryVersion?window.mxClassRecoveryVersion():null;
+ res.cloudDeferred=!!(window.mxClassRecoveryBlockCloudSave&&window.mxClassRecoveryBlockCloudSave(silent));
+ if(cloudOn())p=p.then(function(){return pack(json);}).then(function(pk){if(window.mxClassRecoveryBlockCloudSave&&window.mxClassRecoveryBlockCloudSave(silent)){res.cloudDeferred=true;return;}return X.rpc('mx_t_state_save',{p_data:pk.data,p_encoding:pk.enc,p_client_saved_at:new Date().toISOString()}).then(function(r){if(!r||r.error)throw new Error((r&&r.error)||'لا استجابة');if(r.bytes!==pk.data.length)throw new Error('حجم النسخة على الخادم لا يطابق');res.cloud=r.saved_at;if(window.mxClassRecoveryCloudSaved)window.mxClassRecoveryCloudSaved(recoveryVersion);});}).catch(function(e){res.cloud=false;res.cloudErr=e.message;});
+ if(window.odIsReady&&odIsReady()&&window.odPushNow)p=p.then(function(){if(res.cloudDeferred)return;return odPushNow().then(function(){res.onedrive=true;},function(){res.onedrive=false;});});
+ if(window.mxGradeScanNow&&!res.cloudDeferred)try{mxGradeScanNow();}catch(e){}
  return p.then(function(){busy=false;var ok=res.local&&(res.cloud!==false);if(res.cloud||(!cloudOn()&&res.local)){lastSig=s;dirty=false;try{localStorage.setItem(CK,JSON.stringify({sig:s,at:Date.now(),cloud:!!res.cloud}));localStorage.removeItem(DK);}catch(e){}}paint();
   if(!silent){if(ok)toast('✅ تم حفظ البيانات بنجاح'+(res.cloud?' (على الجهاز + السحابة'+(res.onedrive?' + OneDrive':'')+')':' (على الجهاز'+(cloudOn()?'':' — اربط الخادم للحفظ السحابي')+')'));else toast('⚠️ حُفظت على الجهاز فقط — تعذّر الحفظ السحابي: '+(res.cloudErr||''));}
   if(window.sbPaint)try{sbPaint();}catch(e){}return res;});}
@@ -4362,13 +4364,17 @@ function cdLoadClassKey(){
 function cdOpenDB(){return new Promise(function(resolve){var req=indexedDB.open('mashati_db',2);req.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains('state'))db.createObjectStore('state');if(!db.objectStoreNames.contains('files'))db.createObjectStore('files',{keyPath:'id'});};req.onsuccess=function(e){resolve(e.target.result);};req.onerror=function(){resolve(null);};});}
 function cdLocalState(){try{return JSON.parse(localStorage.getItem('mashati_v1')||'null');}catch(e){return null;}}
 /* الحالة المشتركة في المنصة الرئيسية هي المصدر المعتمد. IndexedDB احتياطي قديم فقط. */
-function cdGetState(){var shared=cdLocalState();if(shared&&shared.classes)return Promise.resolve(shared);return cdOpenDB().then(function(db){if(!db)return shared;return new Promise(function(resolve){try{var tx=db.transaction('state','readonly');var r=tx.objectStore('state').get('main');r.onsuccess=function(){var cached=r.result||null;resolve(cached&&cached.classes?cached:shared);};r.onerror=function(){resolve(shared);};}catch(e){resolve(shared);}});});}
+function cdGetState(){if(typeof state==='object'&&state&&state.classes)return Promise.resolve(state);var shared=cdLocalState();if(shared&&shared.classes)return Promise.resolve(shared);return cdOpenDB().then(function(db){if(!db)return shared;return new Promise(function(resolve){try{var tx=db.transaction('state','readonly');var r=tx.objectStore('state').get('main');r.onsuccess=function(){var cached=r.result||null;resolve(cached&&cached.classes?cached:shared);};r.onerror=function(){resolve(shared);};}catch(e){resolve(shared);}});});}
 function cdSaveState(){
   var localOk=false;
-  /* لوحة الفصول كانت تحفظ نسخة منفصلة محلياً فقط؛ وحفظ المنصة العام كان يستطيع الكتابة فوقها. */
+  /* لا تحفظ لقطة منفصلة فوق الحالة الرئيسية الأحدث. */
+  if(typeof state==='object'&&state&&CD.state!==state){
+    cdToast('تغيّرت بيانات المنصة؛ أعد فتح الشعبة قبل الحفظ لحماية التغييرات الحديثة');
+    return Promise.resolve(false);
+  }
   try{
-    if(typeof state==='object'&&state) state=Object.assign(state,CD.state);
-    else state=CD.state;
+    if(!CD.state)return Promise.resolve(false);
+    CD.students=(CD.state.classes&&CD.state.classes[CD.classKey])||[];
     localStorage.setItem('mashati_v1',JSON.stringify(CD.state));
     localOk=true;
   }catch(e){}
@@ -4468,7 +4474,7 @@ function cdGetAvailableClassKeys(){
   if(Array.isArray(sections))sections.forEach(function(sec){var key='g12_s1_'+sec;if(CD.state.classes&&CD.state.classes[key])keys.push(key);});
   if(!keys.length&&CD.state&&CD.state.classes)Object.keys(CD.state.classes).filter(function(k){return k.indexOf('g12_s1_')===0;}).forEach(function(k){keys.push(k);});
   if(!keys.length&&CD.classKey)keys=[CD.classKey];
-  return keys;
+  return Array.from(new Set(keys));
 }
 function cdClassLabel(classKey){var parts=String(classKey||'').split('_'),sec=parts.length>2?parts.slice(2).join('_'):classKey;return '3 ثانوي '+sec;}
 function cdSwitchClass(classKey){if(!classKey||classKey===CD.classKey)return;try{sessionStorage.setItem('cd_active_class',classKey);}catch(e){}if(window.openStudentSection){window.openStudentSection(classKey);return;}location.href='index.html?class='+encodeURIComponent(classKey);}
@@ -5094,11 +5100,13 @@ async function cdInit(forceClassKey){
   try{
     var s=await cdGetState();
     if(!s){cdToast('⚠️ لا توجد بيانات مشتركة');return;}
+    if(typeof state==='object'&&state&&state.classes)s=state;
     CD.state=s;CD.classKey=forceClassKey||cdLoadClassKey();
     var parts=CD.classKey.split('_');CD.section=parts.length>2?parts[2]:'أ';
     sessionStorage.setItem('cd_active_class',CD.classKey);
     CD.students=(s.classes&&s.classes[CD.classKey])||[];
     cdRenderHeader();cdRenderClassSwitcher();cdRenderStats();
+    if(window.mxPaintClassRecovery)window.mxPaintClassRecovery();
     console.log('✅ لوحة الفصل — جاهزة ('+CD.students.length+' طالب)');
   }catch(e){console.error('Init error:',e);cdToast('⚠️ حدث خطأ');}
 }
@@ -5145,5 +5153,6 @@ window.cdInit=cdInit;
   if(_mxOpenRemoteSession)window.cdAttOpenSession=function(sid){_mxOpenRemoteSession(sid);try{var rr=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey]&&CD.state.attendance[CD.classKey][sid];if(rr&&rr._mode==='remote'&&rr._endsAt)setTimeout(function(){window.cdRemoteStartCountdown(rr._endsAt);},20);}catch(e){console.error('Countdown init failed',e);}};
 })();
 </script>
+<script src="classes-recovery.js?v=20261101-1"></script>
 </body>
 </html>
