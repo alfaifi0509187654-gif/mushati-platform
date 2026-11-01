@@ -4606,6 +4606,19 @@ function cdEditSimpleGrade(stid, type, name){
 }
 window.cdEditSimpleGrade = cdEditSimpleGrade;
 
+function cdRecordGradeAudit(stid, type, previous, next, note){
+  try{
+    if(typeof window.mxRecordOperation==='function') return window.mxRecordOperation('grade', CD.classKey, stid, previous, next, note||type);
+  }catch(e){ console.warn('grade audit',e); }
+  return null;
+}
+function cdRecordBehaviorAudit(stid, previous, next, note){
+  try{
+    if(typeof window.mxRecordOperation==='function') return window.mxRecordOperation('behavior', CD.classKey, stid, previous, next, note||'السلوك');
+  }catch(e){ console.warn('behavior audit',e); }
+  return null;
+}
+
 function cdSaveSimpleGrade(stid, type, max){
   var inp = cdEl('cdYWScore');
   if(!inp) return;
@@ -4616,14 +4629,18 @@ function cdSaveSimpleGrade(stid, type, max){
   if(!CD.state.studentGrades[CD.classKey]) CD.state.studentGrades[CD.classKey] = {};
   var cg = CD.state.studentGrades[CD.classKey];
   if(!cg[type]) cg[type] = {};
-  cg[type][stid] = {value: val, max: max, at: new Date().toISOString()};
+  var before = cg[type][stid] && cg[type][stid].value != null ? Number(cg[type][stid].value) : 0;
+  var labels = {participation:'المشاركة', research:'البحوث', worksheets:'أوراق العمل', activity:'النشاط الصفي'};
+  var label = labels[type] || type;
+  var op = cdRecordGradeAudit(stid, type, before, val, label);
+  cg[type][stid] = {value: val, max: max, at: new Date().toISOString(), operationId: op && op.id || null};
   cdSaveState().then(function(ok){
     if(ok){
-      cdToast('✅ تم حفظ الدرجة');
+      cdToast('✅ تم حفظ '+label+' سحابياً وتحديث أعمال السنة');
       cdRenderStats();
       cdRenderYearWorkTab();
       cdCloseModal();
-    } else { cdToast('⚠️ تعذّر الحفظ'); }
+    } else { cdToast('⚠️ حُفظت محلياً فقط — تعذّر الحفظ السحابي'); }
   });
 }
 window.cdSaveSimpleGrade = cdSaveSimpleGrade;
@@ -4705,10 +4722,12 @@ function cdSaveHomeworkGrade(stid, idx, val){
   var max = a.maxGrade || 10;
   if(v > max){ cdToast('⚠️ الدرجة القصوى '+max); cdManageHomework(stid); return; }
   if(!a.grades) a.grades = {};
-  a.grades[stid] = {value: v, at: new Date().toISOString()};
+  var before = a.grades[stid] && a.grades[stid].value != null ? Number(a.grades[stid].value) : 0;
+  var op = cdRecordGradeAudit(stid, 'homework', before, v, 'الواجب: '+(a.title||'واجب'));
+  a.grades[stid] = {value: v, at: new Date().toISOString(), operationId: op && op.id || null};
   cdSaveState().then(function(ok){
-    if(ok){ cdToast('✅ تم الحفظ'); cdRenderStats(); cdRenderYearWorkTab(); cdManageHomework(stid); }
-    else { cdToast('⚠️ تعذّر الحفظ'); }
+    if(ok){ cdToast('✅ تم حفظ درجة الواجب سحابياً وتحديث أعمال السنة'); cdRenderStats(); cdRenderYearWorkTab(); cdManageHomework(stid); }
+    else { cdToast('⚠️ حُفظت محلياً فقط — تعذّر الحفظ السحابي'); }
   });
 }
 window.cdSaveHomeworkGrade = cdSaveHomeworkGrade;
@@ -4936,13 +4955,38 @@ function cdBehavior(){var s=cdBehaviorSummary();var h='';h+='<div class="cd-type
 function cdNewBehavior(kind){kind=kind||'pos';var h='<div class="cd-type-row"><div id="cdBehPos" class="cd-type-btn pos'+(kind==='pos'?' active':'')+'" onclick="cdBehSetKind(\'pos\')">👍 إيجابي</div><div id="cdBehNeg" class="cd-type-btn neg'+(kind==='neg'?' active':'')+'" onclick="cdBehSetKind(\'neg\')">👎 سلبي</div></div><div class="cd-field"><label>التاريخ</label><input type="date" id="cdBehDate" value="'+cdToday()+'"></div><div class="cd-field"><label>الطلاب</label><div class="cd-stu-picker" id="cdBehStuPicker">';CD.students.forEach(function(st){h+='<label class="cd-stu-pick"><input type="checkbox" value="'+cdEsc(st.id)+'"><span class="av">'+cdEsc(st.name.charAt(0))+'</span><span>'+cdEsc(st.name)+'</span></label>';});h+='</div></div><div class="cd-field"><label>النوع</label><div class="cd-opt-grid" id="cdBehOpts"></div><input type="text" id="cdBehOther" placeholder="يدوي" style="margin-top:8px;display:none"></div><div class="cd-field"><label>ملاحظات</label><textarea id="cdBehNote"></textarea></div>';var foot='<button class="cd-btn primary" onclick="cdSaveBehavior()">💾 حفظ</button>';cdOpenModal('⭐ تسجيل',h,foot);window.CD_BEH_KIND=kind;cdBehSetKind(kind);setTimeout(function(){var picker=cdEl('cdBehStuPicker');if(picker){picker.querySelectorAll('.cd-stu-pick').forEach(function(l){var cb=l.querySelector('input');l.addEventListener('click',function(e){if(e.target===cb)return;cb.checked=!cb.checked;l.classList.toggle('on',cb.checked);e.preventDefault();});});}},30);}
 function cdBehSetKind(k){window.CD_BEH_KIND=k;var pos=cdEl('cdBehPos'),neg=cdEl('cdBehNeg');if(pos)pos.classList.toggle('active',k==='pos');if(neg)neg.classList.toggle('active',k==='neg');var opts=cdEl('cdBehOpts');if(!opts)return;var list=k==='pos'?['احترام','التزام','تركيز','تميز','سريع','مبادرة','تنظيم','أخرى...']:['إزعاج','فوضى','إهمال','نسيان','غش','شجار','جوال','نوم','تركيز','خروج','أخرى...'];opts.innerHTML=list.map(function(o){return '<button type="button" class="cd-opt" data-opt="'+cdEsc(o)+'" onclick="cdBehSelectOpt(this)">'+cdEsc(o)+'</button>';}).join('');}
 function cdBehSelectOpt(btn){var opts=cdEl('cdBehOpts');if(!opts)return;opts.querySelectorAll('.cd-opt').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');var other=cdEl('cdBehOther');if(other){if(btn.getAttribute('data-opt')==='أخرى...'){other.style.display='block';other.focus();}else{other.style.display='none';other.value='';}}}
-function cdSaveBehavior(){var kind=window.CD_BEH_KIND||'pos';var date=cdEl('cdBehDate').value||cdToday();var picker=cdEl('cdBehStuPicker');var selected=[];if(picker)picker.querySelectorAll('input[type=checkbox]').forEach(function(cb){if(cb.checked)selected.push(cb.value);});if(!selected.length){cdToast('⚠️ اختر طالب');return;}var opt=cdEl('cdBehOpts');var active=opt?opt.querySelector('.cd-opt.active'):null;var reason=active?active.getAttribute('data-opt'):'';if(reason==='أخرى...'){var other=(cdEl('cdBehOther').value||'').trim();if(!other){cdToast('⚠️');return;}reason=other;}if(!reason){cdToast('⚠️ اختر نوع');return;}var note=(cdEl('cdBehNote').value||'').trim();var delta=kind==='pos'?1:-1;var sessionId='s_'+date;var now=new Date().toISOString();if(!CD.state.behavior)CD.state.behavior={};if(!CD.state.behavior[CD.classKey])CD.state.behavior[CD.classKey]={};if(!CD.state.behavior[CD.classKey][sessionId])CD.state.behavior[CD.classKey][sessionId]={};selected.forEach(function(stid){if(!CD.state.behavior[CD.classKey][sessionId][stid])CD.state.behavior[CD.classKey][sessionId][stid]=[];CD.state.behavior[CD.classKey][sessionId][stid].push({delta:delta,reason:reason,note:note,at:now});});cdSaveState().then(function(ok){if(ok){cdToast('✅');cdRenderStats();cdBehavior();}});}
-
-/* أنماط التعلم */
-function cdLearningStyles(){var styleMap={visual:{label:'بصري',color:'#2563eb'},auditory:{label:'سمعي',color:'#a855f7'},kinesthetic:{label:'حركي',color:'#d97706'},reading:{label:'قراءة/كتابة',color:'#0d9488'}};var arabicMap={'بصري':'visual','سمعي':'auditory','حركي':'kinesthetic','قراءة':'reading','قراءة/كتابة':'reading'};var counts={visual:0,auditory:0,kinesthetic:0,reading:0,unspecified:0};CD.students.forEach(function(st){var v=st.learningStyle||st.style||(st.profile&&st.profile.learningStyle);var a=CD.state&&CD.state.learningStyles&&CD.state.learningStyles[CD.classKey]&&CD.state.learningStyles[CD.classKey][st.id];if(!v&&typeof a==='string')v=a;if(!v){counts.unspecified++;return;}var mapped=arabicMap[v]||arabicMap[String(v).trim()]||(styleMap[String(v).toLowerCase()]?String(v).toLowerCase():null);if(mapped&&counts[mapped]!==undefined)counts[mapped]++;else counts.unspecified++;});var total=CD.students.length||1;var h='';['visual','auditory','kinesthetic','reading','unspecified'].forEach(function(k){var label,color;if(k==='unspecified'){label='غير محدد';color='#9ca3af';}else{label=styleMap[k].label;color=styleMap[k].color;}var count=counts[k];var pct=Math.round((count/total)*100);h+='<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:11px;padding:12px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700">'+label+'</div><div style="font-family:monospace;color:'+color+';font-weight:900">'+count+' ('+pct+'%)</div></div><div style="height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div></div>';});cdOpenModal('🧠 أنماط التعلم',h);}
-function cdNotes(){var h='<div class="cd-field"><label>الطالب</label><select id="cdNoteTarget">';CD.students.forEach(function(st){h+='<option value="'+cdEsc(st.id)+'">'+cdEsc(st.name)+'</option>';});h+='</select></div><div class="cd-field"><label>الملاحظة</label><textarea id="cdNoteText"></textarea></div>';cdOpenModal('📝 الملاحظات',h,'<button class="cd-btn primary" onclick="cdSaveNote()">💾</button>');}
-function cdSaveNote(){var stid=cdEl('cdNoteTarget').value;var text=(cdEl('cdNoteText').value||'').trim();if(!text){cdToast('⚠️');return;}if(!CD.state.notes)CD.state.notes={};if(!CD.state.notes[CD.classKey])CD.state.notes[CD.classKey]=[];CD.state.notes[CD.classKey].push({studentId:stid,text:text,at:new Date().toISOString()});cdSaveState().then(function(ok){if(ok)cdToast('✅');});cdCloseModal();}
-function cdLateStudents(){var att=CD.state&&CD.state.attendance&&CD.state.attendance[CD.classKey];var h='';if(!att){h='<div style="text-align:center;padding:30px"><div style="font-size:52px">🕐</div><div>لا يوجد سجل</div></div>';cdOpenModal('🕐 المتأخرون',h);return;}var sessions=Object.keys(att).filter(function(sid){return sid.indexOf('_')!==0;});var late=[];CD.students.forEach(function(st){var cnt=0;sessions.forEach(function(sid){var rec=att[sid]&&att[sid][st.id];if(rec&&rec.status==='late')cnt++;});if(cnt>0)late.push({st:st,count:cnt});});if(!late.length){h='<div style="text-align:center;padding:30px;color:#16a34a">لا يوجد متأخرون</div>';}else{late.forEach(function(x){h+='<div style="background:#f9fafb;border-right:3px solid #d97706;border-radius:10px;padding:11px 14px;margin-bottom:7px;display:flex;justify-content:space-between"><div style="font-weight:700">'+cdEsc(x.st.name)+'</div><div style="font-family:monospace;color:#d97706">'+x.count+'</div></div>';});}cdOpenModal('🕐 المتأخرون',h);}
+function cdSaveBehavior(){
+  var kind=window.CD_BEH_KIND||'pos', date=cdEl('cdBehDate').value||cdToday(), picker=cdEl('cdBehStuPicker'), selected=[];
+  if(picker)picker.querySelectorAll('input[type=checkbox]').forEach(function(cb){if(cb.checked)selected.push(cb.value);});
+  if(!selected.length){cdToast('⚠️ اختر طالب');return;}
+  var opt=cdEl('cdBehOpts'), active=opt?opt.querySelector('.cd-opt.active'):null, reason=active?active.getAttribute('data-opt'):'';
+  if(reason==='أخرى...'){var other=(cdEl('cdBehOther').value||'').trim();if(!other){cdToast('⚠️ اكتب نوع السلوك');return;}reason=other;}
+  if(!reason){cdToast('⚠️ اختر نوع السلوك');return;}
+  var note=(cdEl('cdBehNote').value||'').trim(), delta=kind==='pos'?1:-1, sessionId='s_'+date, now=new Date().toISOString(), opKey='beh_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  if(!CD.state.behavior)CD.state.behavior={};
+  if(!CD.state.behavior[CD.classKey])CD.state.behavior[CD.classKey]={};
+  if(!CD.state.behavior[CD.classKey][sessionId])CD.state.behavior[CD.classKey][sessionId]={};
+  if(!CD.state.studentGrades)CD.state.studentGrades={};
+  if(!CD.state.studentGrades[CD.classKey])CD.state.studentGrades[CD.classKey]={};
+  if(!CD.state.studentGrades[CD.classKey].activity)CD.state.studentGrades[CD.classKey].activity={};
+  var activity=CD.state.studentGrades[CD.classKey].activity;
+  var changed=0;
+  selected.forEach(function(stid){
+    var list=CD.state.behavior[CD.classKey][sessionId][stid]||(CD.state.behavior[CD.classKey][sessionId][stid]=[]);
+    if(list.some(function(x){return x.operationId===opKey;}))return;
+    var oldRec=activity[stid], before=oldRec&&oldRec.value!=null?Number(oldRec.value):0;
+    var after=Math.max(0,Math.min(5,before+delta));
+    var audit=cdRecordBehaviorAudit(stid,before,after,(kind==='pos'?'سلوك إيجابي: ':'سلوك سلبي: ')+reason+(note?' — '+note:''));
+    list.push({id:opKey+'_'+stid,operationId:opKey,delta:delta,reason:reason,note:note,at:now});
+    activity[stid]={value:after,max:5,at:now,operationId:audit&&audit.id||opKey};
+    changed++;
+  });
+  if(!changed){cdToast('ℹ️ هذه العملية مسجلة مسبقاً ولم تُكرر');return;}
+  cdSaveState().then(function(ok){
+    if(ok){cdToast('✅ تم تسجيل السلوك وتحديث النشاط وأعمال السنة سحابياً');cdRenderStats();cdRenderYearWorkTab();cdBehavior();}
+    else {cdToast('⚠️ حُفظ السلوك محلياً فقط — تعذّر الحفظ السحابي');}
+  });
+}
 function cdLearningLoss(){var ex=CD.state&&CD.state.exams&&CD.state.exams[CD.classKey];var gradedChapters=0,gradedQuizzes=0;if(ex){(ex.chapters||[]).forEach(function(c){var g=c.grades||{};if(Object.keys(g).filter(function(k){return g[k]&&g[k].value!=null;}).length>0)gradedChapters++;});(ex.quizzes||[]).forEach(function(q){var g=q.grades||{};if(Object.keys(g).filter(function(k){return g[k]&&g[k].value!=null;}).length>0)gradedQuizzes++;});}var totalGraded=gradedChapters+gradedQuizzes;if(totalGraded===0){var h='<div style="text-align:center;padding:30px 0"><div style="font-size:56px;color:#9ca3af">☆</div></div><div style="text-align:center;font-size:16px;font-weight:800;margin-bottom:20px">لا توجد نتائج يمكن تحليلها</div>';cdOpenModal('الفاقد',h,'');return;}var low=[];CD.students.forEach(function(st){var yw=cdCalcStudentYearWork(st.id);if(yw.percent<70)low.push({st:st,yw:yw});});var h2='';if(!low.length){h2='<div style="text-align:center;padding:30px;color:#16a34a">لا يوجد فاقد</div>';}else{low.forEach(function(x){h2+='<div style="background:#f9fafb;border-right:3px solid #dc2626;border-radius:11px;padding:11px 14px;margin-bottom:8px;display:flex;justify-content:space-between"><div><div style="font-weight:700">'+cdEsc(x.st.name)+'</div></div><div style="font-family:monospace;color:#dc2626">'+x.yw.percent+'%</div></div>';});}cdOpenModal('الفاقد',h2,'');}
 function cdWhiteboard(){var h='<canvas id="cdBoard" width="320" height="380" style="width:100%;background:#fff;border-radius:12px;touch-action:none;border:1px solid #e5e7eb"></canvas><div style="display:flex;gap:6px;margin-top:10px;justify-content:center">';['#000','#3b82f6','#22c55e','#ef4444','#f59e0b'].forEach(function(c){h+='<button onclick="cdSetBoardColor(\''+c+'\')" style="width:36px;height:36px;border-radius:50%;background:'+c+';border:2px solid #fff"></button>';});h+='<button onclick="cdBoardClear()" style="padding:0 14px;height:36px;border-radius:9px;background:#dc2626;color:#fff;font-weight:700">مسح</button></div>';cdOpenModal('🖍️ السبورة',h);setTimeout(cdBoardInit,100);}
 var cdBoardCtx=null,cdBoardDrawing=false,cdBoardPen='#000';
