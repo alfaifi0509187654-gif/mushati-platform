@@ -2770,7 +2770,7 @@ function need(a){if(can(a))return true;deny(a);return false;}
 function stStatus(s){return (s&&ST_STATUS[s.status])?s.status:'active';}
 function groupOf(ck,sid){var g=state.groups[ck]||[];for(var i=0;i<g.length&&i<getGroupCount();i++){if((g[i]||[]).indexOf(sid)>=0)return i;}return -1;}
 function sortList(list,ck){var d=stSet().display,dir=d.sortDir==='desc'?-1:1;if(d.sortBy==='manual')return dir<0?list.slice().reverse():list.slice();var arr=list.map(function(s,i){return{s:s,i:i};});arr.sort(function(a,b){var x,y;if(d.sortBy==='name'){x=a.s.name||'';y=b.s.name||'';var c=x.localeCompare(y,'ar');return c?c*dir:a.i-b.i;}if(d.sortBy==='studentNo'){x=a.s.studentNo||'';y=b.s.studentNo||'';var nx=parseFloat(x),ny=parseFloat(y);var c2=(!isNaN(nx)&&!isNaN(ny))?nx-ny:String(x).localeCompare(String(y),'ar');if(!x&&y)return 1;if(x&&!y)return -1;return c2?c2*dir:a.i-b.i;}if(d.sortBy==='group'){x=groupOf(ck,a.s.id);y=groupOf(ck,b.s.id);if(x<0)x=99;if(y<0)y=99;return (x-y)*dir||a.i-b.i;}if(d.sortBy==='status'){var ord={active:0,suspended:1,archived:2};return (ord[stStatus(a.s)]-ord[stStatus(b.s)])*dir||a.i-b.i;}return a.i-b.i;});return arr.map(function(x){return x.s;});}
-function workingList(ck){var sh=stSet().status.showSuspended;var l=(state.classes[ck]||[]).filter(function(s){var st=stStatus(s);return st==='active'||(st==='suspended'&&sh);});return sortList(l,ck);}
+function workingList(ck){var sh=stSet().status.showSuspended;var l=(state.classes[ck]||[]).filter(function(s){var st=stStatus(s);return s.archiveStatus!=='archived'&&st!=='archived'&&(st==='active'||(st==='suspended'&&sh));});return sortList(l,ck);}
 window.stWorkingList=workingList;
 /* القائمة التي تستخدمها تبويبات الحضور والدرجات… داخل الفصول والطلاب */
 getStuStudents=function(){return workingList(stuOpenClass);};
@@ -3782,7 +3782,7 @@ window.stDeleteAllDemo=function(){if(typeof can==='function'&&!can('delete')){to
 function demoReview(){var rows=[];Object.keys(state.classes||{}).forEach(function(ck){(state.classes[ck]||[]).forEach(function(s){if(isReviewCandidate(s))rows.push({name:s.name,section:ckL(ck),status:(s.status||'active')==='archived'?'مؤرشف':'نشط'});});});if(!rows.length)return '<div class="stx-review stx-review-empty">✅ لم يتم العثور على أسماء نموذجية موجودة للمراجعة.</div>';return '<div class="stx-review"><div class="stx-review-title">⚠️ أسماء تحتاج مراجعة</div><div class="stx-review-note">هذه أسماء كانت موجودة كبيانات نموذجية سابقة. يمكنك حذفها دفعة واحدة بعد التأكد.</div><div class="stx-review-list">'+rows.map(function(x){return '<div><b>'+E(x.name)+'</b><span>شعبة '+E(x.section)+' · '+E(x.status)+'</span></div>';}).join('')+'</div><button class="btn btn-danger btn-sm stx-review-delete" onclick="stDeleteAllDemo()">🗑️ حذف جميع الأسماء الظاهرة</button></div>';}
 /* 2) لوحة الطلبة المبسّطة */
 function ckL(ck){return String(ck||'').split('_').pop();}
-function active(){var r=[];Object.keys(state.classes||{}).forEach(function(ck){if(!/^g\d+_s\d+_/.test(ck))return;(state.classes[ck]||[]).forEach(function(s){if((s.status||'active')!=='archived'&&!s.demo)r.push({s:s,ck:ck});});});return r;}
+function active(){var r=[];Object.keys(state.classes||{}).forEach(function(ck){if(!/^g\d+_s\d+_/.test(ck))return;(state.classes[ck]||[]).forEach(function(s){if((s.status||'active')!=='archived'&&s.archiveStatus!=='archived'&&!s.demo)r.push({s:s,ck:ck});});});return r;}
 function secsOn(){var o=[];Object.keys(state.sections||{}).forEach(function(k){(state.sections[k]||[]).forEach(function(L){o.push(k+'_'+L);});});return o;}
 var Q='';
 function results(){var q=String(Q||'').trim();if(!q)return '';var nq=A.norm(q),code=window.mxNormCode&&mxNormCode(q);var r=active().filter(function(x){return (code&&x.s.code===code)||A.norm(x.s.name||'').indexOf(nq)>=0||String(x.s.code||'').toUpperCase().indexOf(q.toUpperCase())===0;}).slice(0,30);
@@ -4512,7 +4512,7 @@ function cdSaveState(){
   }
   try{
     if(!CD.state)return Promise.resolve(false);
-    CD.students=(CD.state.classes&&CD.state.classes[CD.classKey])||[];
+    CD.students=((CD.state.classes&&CD.state.classes[CD.classKey])||[]).filter(function(s){return (s.status||'active')!=='archived'&&s.archiveStatus!=='archived'&&!s.demo;});
     localStorage.setItem('mashati_v1',JSON.stringify(CD.state));
     localOk=true;
   }catch(e){}
@@ -4625,7 +4625,7 @@ function cdRenderClassSwitcher(){
 }
 function cdSetYearWorkClass(classKey){
   if(!classKey||!CD.state||!CD.state.classes||!CD.state.classes[classKey])return;
-  CD.classKey=classKey;var parts=classKey.split('_');CD.section=parts.length>2?parts.slice(2).join('_'):'—';CD.students=CD.state.classes[classKey]||[];sessionStorage.setItem('cd_active_class',classKey);
+  CD.classKey=classKey;var parts=classKey.split('_');CD.section=parts.length>2?parts.slice(2).join('_'):'—';CD.students=(CD.state.classes[classKey]||[]).filter(function(s){return (s.status||'active')!=='archived'&&s.archiveStatus!=='archived'&&!s.demo;});sessionStorage.setItem('cd_active_class',classKey);
   cdRenderHeader();cdRenderClassSwitcher();cdRenderStats();cdRenderStudentsTab();cdRenderYearWorkTab();cdSwitchTab('yearwork');
 }
 window.cdSetYearWorkClass=cdSetYearWorkClass;
