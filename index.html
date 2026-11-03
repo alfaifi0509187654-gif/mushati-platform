@@ -847,7 +847,7 @@ html:has(.cxs) body{background:linear-gradient(145deg,#f8fafc 0%,#eef2ff 60%,#ec
 <div class="page" id="page-classes"><div id="classesView"><div class="grid grid-3" id="classesGrid"></div></div><div id="classDetail" style="display:none"></div></div>
 <div class="page" id="page-education">
 <div id="eduListView">
-<div class="card" id="eduLessonHub"><div class="card-title">📘 محتوى المنهج</div><div class="card-sub">اختر القسم لفتح محتواه داخل المنصة</div><div class="grid grid-4" style="margin-top:14px"><button class="btn btn-primary" onclick="openEmbeddedLessons()" style="min-height:82px;font-size:16px">📖<br>الدروس</button><button class="btn btn-ghost" onclick="openEducationTests()" style="min-height:82px;font-size:16px">📝<br>الاختبارات</button><button class="btn btn-ghost" onclick="openEducationAssignments()" style="min-height:82px;font-size:16px">📋<br>الواجبات</button><button class="btn btn-ghost" onclick="openEducationLibrary()" style="min-height:82px;font-size:16px">📚<br>المكتبة</button><button class="btn btn-ghost" onclick="openClassBag()" style="min-height:82px;font-size:16px">🧰<br>حقيبة الفصل</button></div></div>
+<div class="card" id="eduLessonHub"><div class="card-title">📘 محتوى المنهج</div><div class="card-sub">اختر القسم لفتح محتواه داخل المنصة</div><div class="grid grid-4" style="margin-top:14px"><button class="btn btn-primary" onclick="openEducationLessons()" style="min-height:82px;font-size:16px">📖<br>الدروس</button><button class="btn btn-ghost" onclick="openEducationTests()" style="min-height:82px;font-size:16px">📝<br>الاختبارات</button><button class="btn btn-ghost" onclick="openEducationAssignments()" style="min-height:82px;font-size:16px">📋<br>الواجبات</button><button class="btn btn-ghost" onclick="openEducationLibrary()" style="min-height:82px;font-size:16px">📚<br>المكتبة</button><button class="btn btn-ghost" onclick="openClassBag()" style="min-height:82px;font-size:16px">🧰<br>حقيبة الفصل</button></div></div>
 <div class="card"><div class="card-title">المنهج — الكيمياء 3</div><div class="card-sub">13 درساً مستقلاً حسب خطة الوزارة</div><div style="margin-top:16px;padding:16px;background:linear-gradient(120deg,#0f766e,#14b8a6);border-radius:12px;color:#fff" id="eduBookBanner"></div></div>
 <div id="eduToolbar" style="margin-bottom:14px"></div>
 <div class="card"><div class="card-title">📚 المنهج الدراسي</div><div class="card-sub" id="eduCurrSub">—</div><div id="eduChapters"></div></div>
@@ -4143,8 +4143,13 @@ card();setTimeout(card,600);
     });
   }
   window.closeEmbeddedLessons=function(){var h=host();if(h)h.innerHTML='';var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='block';if(d)d.style.display='none';};
+  window.openEducationLessons=function(){
+    var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');
+    if(d)d.style.display='none';
+    if(l){l.style.display='block';l.scrollIntoView({behavior:'smooth',block:'start'});}
+  };
   window.openEmbeddedLessons=function(){
-    var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='none';if(d){d.style.display='block';d.innerHTML='<div class="card"><div class="card-title">📖 الدروس التفاعلية</div><div class="card-sub">جارٍ تحميل محتوى ملف الدروس الأصلي داخل المنصة…</div><div id="mxEmbeddedLessons" style="margin-top:14px"><div class="empty">⏳ جارٍ تجهيز الدروس والأنشطة…</div></div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeEmbeddedLessons()">← العودة إلى المنهج</button></div>';}
+    var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='none';if(d){d.style.display='block';d.innerHTML='<div class="card"><div class="card-title">📚 المكتبة — الدروس التفاعلية</div><div class="card-sub">جارٍ تحميل محتوى ملف الدروس الأصلي داخل المكتبة…</div><div id="mxEmbeddedLessons" style="margin-top:14px"><div class="empty">⏳ جارٍ تجهيز الدروس والأنشطة…</div></div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeEmbeddedLessons()">← العودة إلى المنهج</button></div>';}
     var h=host();if(!h||h.__mounted)return;
     fetch(sourceUrl,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(function(text){
       var doc=new DOMParser().parseFromString(text,'text/html');var shadow=h.attachShadow({mode:'open'});h.__mounted=1;
@@ -4153,7 +4158,7 @@ card();setTimeout(card,600);
       var sourceHeader=shadow.querySelector('header.top');if(sourceHeader)sourceHeader.remove();
       var sourceNav=shadow.querySelector('nav.tabs');if(sourceNav)sourceNav.style.marginTop='0';
       return sourceScripts(doc,shadow);
-    }).then(function(){if(window.toast)toast('✅ تم دمج الدروس والأنشطة التفاعلية داخل أيقونة الدروس');}).catch(function(e){if(h)h.innerHTML='<div class="empty" style="color:#b91c1c">تعذر تحميل ملف الدروس: '+escL(e.message)+'<br><small>تحقق من نشر ملف curriculum-lessons-source.html مع المنصة.</small></div>';});
+    }).then(function(){if(window.toast)toast('✅ تم نقل الدروس والأنشطة التفاعلية إلى المكتبة');}).catch(function(e){if(h)h.innerHTML='<div class="empty" style="color:#b91c1c">تعذر تحميل ملف الدروس: '+escL(e.message)+'<br><small>تحقق من نشر ملف curriculum-lessons-source.html مع المنصة.</small></div>';});
   };
   window.openEmptyCurriculumSection=function(title){
     var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');if(l)l.style.display='none';
@@ -4211,7 +4216,7 @@ card();setTimeout(card,600);
   };
   window.openEducationAssignments=function(){openEmptyCurriculumSection('الواجبات');};
 
-  window.openEducationLibrary=function(){openEmptyCurriculumSection('المكتبة');};
+  window.openEducationLibrary=function(){window.openEmbeddedLessons();};
   window.openClassBag=function(){
     var l=document.getElementById('eduListView'),d=document.getElementById('lessonDetail');
     if(l)l.style.display='none';
