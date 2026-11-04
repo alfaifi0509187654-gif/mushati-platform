@@ -16,7 +16,7 @@
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
   function q(s) { return document.querySelector(s); }
   function visible(e) { return !!(e && (e.offsetWidth || e.offsetHeight || e.getClientRects().length)); }
-  function toast(t) { if (typeof window.cdToast === 'function') window.cdToast(t); else if (typeof window.toast === 'function') window.toast(t); }
+  function toast(t) { try { if (typeof window.cdToast === 'function') { window.cdToast(t); return; } if (typeof window.toast === 'function') { window.toast(t); return; } } catch (e) {} try { console.info(t); } catch (e2) {} }
   function targetId(e) { return e.id || e.getAttribute('data-page-id') || e.className || 'page'; }
   function storageKey() { return KEY + ':' + location.pathname + ':' + targetId(target); }
   function currentTarget() {
