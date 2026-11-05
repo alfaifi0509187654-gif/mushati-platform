@@ -116,7 +116,9 @@
   function enableWriting(on) { if (!canvas) return; canvas.style.pointerEvents = on ? 'auto' : 'none'; canvas.classList.toggle('active', on); var b = q('#mxInkWrite'); if (b) { b.textContent = on ? '🖱️ تمرير الصفحة' : '✍️ الكتابة فوق الصفحة'; b.classList.toggle('on', on); } if (on) toast('✍️ وضع الكتابة مفعّل — عطّله للتمرير'); }
   function attach() {
     var next = currentTarget() || target; if (!next) return;
-    if (target !== next) { if (target) save(); target = next; setRelative(target); if (canvas && canvas.parentNode !== target) target.appendChild(canvas); load(); resizeCanvas(); }
+    if (target !== next) { if (target) save(); target = next; setRelative(target); load(); }
+    if (canvas && canvas.parentNode !== target) target.appendChild(canvas);
+    resizeCanvas();
   }
   function ensureCanvas() {
     if (canvas) return;
