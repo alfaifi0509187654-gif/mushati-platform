@@ -20,12 +20,12 @@
   function targetId(e) { return e.id || e.getAttribute('data-page-id') || e.className || 'page'; }
   function storageKey() { return KEY + ':' + location.pathname + ':' + targetId(target); }
   function currentTarget() {
-    var app = q('.app');
-    var lesson = q('#mxEmbeddedLessons') || q('#lessonDetail') || q('#eduLessonsContent');
-    if (!visible(app) && !visible(lesson)) return null;
-    var list = ['#mxEmbeddedLessons', '#lessonDetail', '#eduLessonsContent', '.content'];
-    for (var i = 0; i < list.length; i++) { var e = q(list[i]); if (visible(e)) return e; }
-    return visible(app) ? app : (visible(lesson) ? lesson : null);
+    var list = ['#mxEmbeddedLessons', '#lessonDetail', '#eduLessonsContent', '.content', '.app'];
+    for (var i = 0; i < list.length; i++) {
+      var all = document.querySelectorAll(list[i]);
+      for (var j = 0; j < all.length; j++) if (visible(all[j])) return all[j];
+    }
+    return null;
   }
   function setRelative(e) {
     if (!e || e === document.body || e === document.documentElement) return;
@@ -99,7 +99,7 @@
   }
   function setStatus(t) { var e = q('#mxInkStatus'); if (e) e.textContent = t; }
   function applyPageZoom() {
-    var app = q('.app') || q('#app') || q('.shell');
+    var app = target && target.closest ? (target.closest('.app') || target) : (q('.app') || q('#app') || q('.shell'));
     if (app) app.style.zoom = pageZoom;
     var z = q('#mxInkZoomValue'); if (z) z.textContent = Math.round(pageZoom * 100) + '%';
   }
