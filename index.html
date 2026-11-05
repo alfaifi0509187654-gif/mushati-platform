@@ -5181,7 +5181,7 @@ function cdBoardInit(){var c=cdEl('cdBoard');if(!c)return;cdBoardCtx=c.getContex
   function end(){if(!cdBoardDrawing)return;cdBoardDrawing=false;cdBoardSnapshot();}
   c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',end);c.addEventListener('mouseleave',end);c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end,{passive:false});cdBoardUpdateButtons();}
 function cdBoardUpdateButtons(){var u=cdEl('cdBoardUndo'),r=cdEl('cdBoardRedo');if(u)u.disabled=cdBoardHistoryIndex<=0;if(r)r.disabled=cdBoardHistoryIndex>=cdBoardHistory.length-1;}
-function cdWhiteboard(){if(window.mxFloatingBoard&&typeof window.mxFloatingBoard.open==='function'){cdCloseModal();setTimeout(function(){window.mxFloatingBoard.open();},80);return;}cdOpenModal('🖍️ السبورة المدمجة','<div class="card-sub">جارٍ تحميل السبورة العائمة فوق محتوى الصفحة…</div>');}
+function cdWhiteboard(){if(window.mxFloatingBoard&&typeof window.mxFloatingBoard.open==='function'){try{if(typeof cdCloseModal==='function')cdCloseModal();}catch(e){}setTimeout(function(){if(window.mxFloatingBoard&&typeof window.mxFloatingBoard.open==='function')window.mxFloatingBoard.open();},120);return;}cdOpenModal('🖍️ السبورة المدمجة','<div class="card-sub">جارٍ تحميل السبورة العائمة فوق محتوى الصفحة…</div>');}
 function cdBoardSetMode(m){cdBoardMode=m;if(cdBoardCtx)cdBoardCtx.strokeStyle=m==='eraser'?'#fff':cdBoardPen;}
 function cdSetBoardColor(c){cdBoardPen=c;cdBoardMode='pen';if(cdBoardCtx)cdBoardCtx.strokeStyle=c;}
 function cdBoardUndo(){if(cdBoardHistoryIndex<=0)return;cdBoardHistoryIndex--;cdBoardRestoreData(cdBoardHistory[cdBoardHistoryIndex]);cdBoardSaveNow();}
