@@ -2791,10 +2791,10 @@ window.reportStudentList=function(ck){return window.stWorkingList?window.stWorki
   function syncArchivedRoster(){
     var X=window.__mx;
     if(!X||!X.isOn||!X.isOn()||window.__MX_MODE)return Promise.resolve(false);
-    return X.rest('mx_students?archive_status=eq.archived&select=student_id,archive_reason,archived_at&limit=500').then(function(rows){
-      var by={};(rows||[]).forEach(function(x){if(x&&x.student_id)by[x.student_id]=x;});
+    return X.rest('mx_students?archive_status=eq.archived&select=student_id,username,archive_reason,archived_at&limit=500').then(function(rows){
+      var by={};(rows||[]).forEach(function(x){if(!x)return;if(x.student_id)by['id:'+x.student_id]=x;if(x.username)by['code:'+String(x.username).toUpperCase()]=x;});
       var changed=false;
-      Object.keys(state.classes||{}).forEach(function(ck){(state.classes[ck]||[]).forEach(function(st){var x=by[st.id];if(!x)return;if(st.status!=='archived'||st.archiveStatus!=='archived'||st.statusReason!==x.archive_reason){st.status='archived';st.archiveStatus='archived';st.statusReason=x.archive_reason||'أرشفة من الخادم';st.archivedAt=x.archived_at||Date.now();changed=true;}});});
+      Object.keys(state.classes||{}).forEach(function(ck){(state.classes[ck]||[]).forEach(function(st){var x=by['id:'+st.id]||by['code:'+String(st.code||st.username||'').toUpperCase()];if(!x)return;if(st.status!=='archived'||st.archiveStatus!=='archived'||st.statusReason!==x.archive_reason){st.status='archived';st.archiveStatus='archived';st.statusReason=x.archive_reason||'أرشفة من الخادم';st.archivedAt=x.archived_at||Date.now();changed=true;}});});
       if(changed){save();if(state.page==='reports'&&typeof renderReports==='function')setTimeout(renderReports,20);if(typeof renderHome==='function'&&state.page==='home')setTimeout(renderHome,20);if(typeof renderClasses==='function'&&state.page==='classes')setTimeout(renderClasses,20);}
       return changed;
     }).catch(function(){return false;});
