@@ -2479,7 +2479,7 @@ var dk=document.createElement('div');dk.id='toolDock';dk.innerHTML='<button oncl
 setInterval(function(){var ov=el('fsOverlay');dk.style.display=(ov&&ov.classList.contains('show')||ov&&ov.classList.contains('active')||ov&&getComputedStyle(ov).display!=='none'&&ov.offsetWidth>0)?'flex':'none';},800);
 /* تشخيص الدروس من التقويم التكويني */
 function weakCard(){var host=el('reportsContent');if(!host||el('weakLessons'))return;var f=state.lessonFormative||{},rows=[];for(var k in f){var a=f[k]||[];if(!a.length)continue;var avg=Math.round(a.reduce(function(s,x){return s+x.pct;},0)/a.length);var lc=state.lessonContents&&state.lessonContents[k];rows.push({t:(lc&&lc.title)||k,avg:avg,n:a.length});}if(!rows.length)return;rows.sort(function(a,b){return a.avg-b.avg;});var h='<div id="weakLessons" class="card" style="margin-top:16px;padding:16px;background:#fff;border-radius:14px"><div style="font-weight:800;margin-bottom:10px">🩺 تشخيص الدروس (من التقويم التكويني)</div>';rows.forEach(function(r){h+='<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #e2e8f0"><span>'+esc(r.t)+'</span><span style="font-weight:700;color:'+(r.avg<60?'#dc2626':'#16a34a')+'">'+r.avg+'% · '+r.n+' محاولة'+(r.avg<60?' ⚠️ يحتاج إعادة':'')+'</span></div>';});host.insertAdjacentHTML('beforeend',h+'</div>');}
-var _rr=renderReports;renderReports=function(){var r=_rr.apply(this,arguments);try{weakCard();}catch(e){console.error(e);}return r;};
+var _rr=renderReports;renderReports=function(){var r=_rr.apply(this,arguments);try{weakCard();}catch(e){console.error(e);}try{if(window.mxRefreshArchivedRoster)window.mxRefreshArchivedRoster();}catch(e){}return r;};
 })();
 
 </script>
@@ -2791,10 +2791,10 @@ window.reportStudentList=function(ck){return window.stWorkingList?window.stWorki
   function syncArchivedRoster(){
     var X=window.__mx;
     if(!X||!X.isOn||!X.isOn()||window.__MX_MODE)return Promise.resolve(false);
-    return X.rest('mx_students?archive_status=eq.archived&select=student_id,username,archive_reason,archived_at&limit=500').then(function(rows){
-      var by={};(rows||[]).forEach(function(x){if(!x)return;if(x.student_id)by['id:'+x.student_id]=x;if(x.username)by['code:'+String(x.username).toUpperCase()]=x;});
+    return X.rest('mx_students?archive_status=eq.archived&select=student_id,username,name,archive_reason,archived_at&limit=500').then(function(rows){
+      var by={};(rows||[]).forEach(function(x){if(!x)return;if(x.student_id)by['id:'+x.student_id]=x;if(x.username)by['code:'+String(x.username).toUpperCase()]=x;if(x.name)by['name:'+String(x.name).replace(/\s+/g,' ').trim()]=x;});
       var changed=false;
-      Object.keys(state.classes||{}).forEach(function(ck){(state.classes[ck]||[]).forEach(function(st){var x=by['id:'+st.id]||by['code:'+String(st.code||st.username||'').toUpperCase()];if(!x)return;if(st.status!=='archived'||st.archiveStatus!=='archived'||st.statusReason!==x.archive_reason){st.status='archived';st.archiveStatus='archived';st.statusReason=x.archive_reason||'أرشفة من الخادم';st.archivedAt=x.archived_at||Date.now();changed=true;}});});
+      Object.keys(state.classes||{}).forEach(function(ck){(state.classes[ck]||[]).forEach(function(st){var x=by['id:'+st.id]||by['code:'+String(st.code||st.username||st.studentNo||'').toUpperCase()]||by['name:'+String(st.name||'').replace(/\s+/g,' ').trim()];if(!x)return;if(st.status!=='archived'||st.archiveStatus!=='archived'||st.statusReason!==x.archive_reason){st.status='archived';st.archiveStatus='archived';st.statusReason=x.archive_reason||'أرشفة من الخادم';st.archivedAt=x.archived_at||Date.now();changed=true;}});});
       if(changed){save();if(state.page==='reports'&&typeof renderReports==='function')setTimeout(renderReports,20);if(typeof renderHome==='function'&&state.page==='home')setTimeout(renderHome,20);if(typeof renderClasses==='function'&&state.page==='classes')setTimeout(renderClasses,20);}
       return changed;
     }).catch(function(){return false;});
