@@ -5502,5 +5502,52 @@ window.cdInit=cdInit;
 </script>
 <script src="mx-document-engine.js"></script>
 <script src="floating-windows.js?v=20261101-1"></script>
+<script id="mxArchiveRegistryUi">
+(function(){
+  if(window.__mxArchiveRegistryUi)return; window.__mxArchiveRegistryUi=1;
+  var escA=window.esc||function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  function cloud(){return !!(window.__mx&&__mx.isOn&&__mx.isOn());}
+  function pane(){return document.querySelector('.sett-pane[data-pane="archives"]');}
+  function tab(){return document.querySelector('[data-settab="archives"]');}
+  function api(){return window.__mx;}
+  function fmt(v){if(!v)return '—';try{return new Date(v).toLocaleString('ar-SA-u-nu-latn-ca-gregory',{dateStyle:'medium',timeStyle:'short'});}catch(e){return String(v);}}
+  function notifyA(m){if(typeof window.toast==='function')toast(m);else alert(m);}
+  function reasonPrompt(name){var r=prompt('سبب الأرشفة للطالب «'+name+'» (اختياري):','');return r===null?null:String(r).trim();}
+  function mount(){
+    var anchor=document.querySelector('[data-settab="backup"]');
+    if(!anchor)return;
+    if(!tab()){
+      var t=document.createElement('button');t.className=anchor.className.replace(/\bactive\b/,'').trim();t.setAttribute('data-settab','archives');t.textContent='🗄️ الأرشيفات';anchor.parentNode.insertBefore(t,anchor);
+      t.onclick=function(){document.querySelectorAll('[data-settab]').forEach(function(x){x.classList.remove('active');});t.classList.add('active');document.querySelectorAll('.sett-pane').forEach(function(x){x.style.display=x.getAttribute('data-pane')==='archives'?'block':'none';});render();};
+    }
+    if(!pane()){
+      var p=document.createElement('div');p.id='mxArchiveSettingsPane';p.className='sett-pane';p.setAttribute('data-pane','archives');p.style.display='none';anchor.parentNode.parentNode.insertBefore(p,anchor.parentNode.parentNode.querySelector('.sett-pane[data-pane="backup"]'));renderShell(p);
+    }
+  }
+  function renderShell(p){
+    p.innerHTML='<div class="mx-archive-hero"><div><div class="mx-archive-kicker">🗄️ إدارة محفوظة وآمنة</div><h2>الأرشيفات</h2><p>عرض السجلات المؤرشفة واستعادتها يدوياً فقط. لا توجد استعادة تلقائية.</p></div><button class="btn btn-ghost btn-sm" onclick="mxArchiveRefresh()">🔄 تحديث</button></div><div class="mx-archive-warning">🔒 الاستعادة لا تتم إلا من هذه الصفحة وبعد تأكيدين. جميع العمليات تُسجل في سجل التدقيق ولا تُحذف البيانات التاريخية.</div><div class="mx-archive-tabs"><button class="btn btn-primary btn-sm" id="mxArchStudentsTab" onclick="mxArchiveView(\'students\')">👥 أرشيف الطلاب</button><button class="btn btn-ghost btn-sm" id="mxArchAuditTab" onclick="mxArchiveView(\'audit\')">🧾 سجل الأرشفة والاستعادة</button></div><div id="mxArchiveBody"><div class="sts-hint">اضغط «تحديث» لقراءة الأرشيف من Supabase.</div></div>';
+  }
+  function render(){mount();var p=pane();if(!p)return;if(p.style.display!=='none')mxArchiveRefresh();}
+  function rows(){return api().rest('mx_students?archive_status=eq.archived&select=student_id,username,name,class_key,active,archive_status,archive_reason,archived_at&order=archived_at.desc&limit=500');}
+  function audits(){return api().rest('mx_archive_audit?select=id,entity_type,entity_id,action,reason,before_data,after_data,created_at&order=created_at.desc&limit=200');}
+  function paintStudents(list){var b=document.getElementById('mxArchiveBody');if(!b)return;list=list||[];var h='<div class="mx-archive-summary"><div><b>'+list.length+'</b><span>طلاب مؤرشفون</span></div><div><b>0</b><span>استعادة تلقائية</span></div><div><b>🔒</b><span>استعادة يدوية فقط</span></div></div>';
+    if(!list.length){b.innerHTML=h+'<div class="card mx-archive-empty"><div style="font-size:38px">✅</div><h3>لا توجد أسماء مؤرشفة</h3><p>سيظهر الطالب هنا بعد أرشفته مع الاحتفاظ ببياناته التاريخية.</p></div>';return;}
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><b>أرشيف الطلاب</b><div class="sts-hint">هذه القائمة من Supabase مباشرة وليست نسخة محلية.</div></div><input id="mxArchiveSearch" class="form-input" style="max-width:260px" placeholder="بحث بالاسم أو الكود…" oninput="mxArchiveFilter(this.value)"></div><div class="rep-table-wrap" style="margin-top:12px"><table class="rep-table"><thead><tr><th>الطالب</th><th>الكود</th><th>الشعبة</th><th>سبب الأرشفة</th><th>التاريخ</th><th>إجراء</th></tr></thead><tbody id="mxArchiveRows">'+list.map(function(x){return '<tr data-archive-search="'+escA([x.name,x.username,x.class_key,x.archive_reason].join(' '))+'"><td class="name-cell">'+escA(x.name||'—')+'</td><td dir="ltr">'+escA(x.username||'—')+'</td><td>'+escA(x.class_key||'—')+'</td><td>'+escA(x.archive_reason||'—')+'</td><td>'+escA(fmt(x.archived_at))+'</td><td><button class="btn btn-primary btn-sm" onclick="mxArchiveRestore(\''+escA(x.student_id)+'\',\''+escA(x.name||x.username)+'\')">♻️ استعادة</button></td></tr>';}).join('')+'</tbody></table></div></div>';
+    b.innerHTML=h;
+  }
+  function paintAudit(list){var b=document.getElementById('mxArchiveBody');if(!b)return;list=list||[];var h='<div class="card"><div class="card-title">🧾 سجل الأرشفة والاستعادة</div><div class="sts-hint">سجل غير قابل للتعديل من هذه الواجهة — يعرض آخر 200 عملية.</div><div class="rep-table-wrap" style="margin-top:12px"><table class="rep-table"><thead><tr><th>التاريخ</th><th>النوع</th><th>المعرف</th><th>العملية</th><th>السبب</th></tr></thead><tbody>';
+    h+=list.length?list.map(function(x){return '<tr><td>'+escA(fmt(x.created_at))+'</td><td>'+escA(x.entity_type==='student'?'طالب':x.entity_type)+'</td><td dir="ltr">'+escA(x.entity_id)+'</td><td><span class="badge '+(x.action==='restore'?'b-green':'b-slate')+'">'+(x.action==='restore'?'استعادة':'أرشفة')+'</span></td><td>'+escA(x.reason||'—')+'</td></tr>';}).join(''):'<tr><td colspan="5" style="text-align:center">لا توجد عمليات مسجلة بعد.</td></tr>';
+    b.innerHTML=h+'</tbody></table></div></div>';
+  }
+  window.mxArchiveView=function(kind){var p=pane();if(!p||!cloud()){notifyA('⚠️ سجّل دخول المعلم واربط Supabase أولاً');return;}var b=document.getElementById('mxArchiveBody');if(b)b.innerHTML='<div class="card" style="text-align:center;padding:28px">⏳ جارٍ تحميل الأرشيف…</div>';if(kind==='audit')audits().then(paintAudit).catch(function(e){if(b)b.innerHTML='<div class="card" style="color:#b91c1c">⚠️ تعذر تحميل سجل التدقيق: '+escA(e.message)+'</div>';});else rows().then(paintStudents).catch(function(e){if(b)b.innerHTML='<div class="card" style="color:#b91c1c">⚠️ تعذر تحميل أرشيف الطلاب: '+escA(e.message)+'</div>';});};
+  window.mxArchiveRefresh=function(){if(!pane()||pane().style.display==='none')return;mxArchiveView('students');};
+  window.mxArchiveFilter=function(q){q=String(q||'').toLowerCase();document.querySelectorAll('#mxArchiveRows tr').forEach(function(r){r.style.display=!q||String(r.getAttribute('data-archive-search')||'').toLowerCase().indexOf(q)>=0?'':'none';});};
+  window.mxArchiveRestore=function(id,name){if(!cloud()){notifyA('⚠️ لا يوجد اتصال بـ Supabase');return;}if(!confirm('هل تريد فتح نافذة استعادة الطالب «'+name+'»؟'))return;var typed=prompt('تأكيد الاستعادة للطالب «'+name+'»:\nاكتب كلمة «استعادة» حرفياً للمتابعة:','');if(typed!=='استعادة'){notifyA('لم تتم الاستعادة — لم يتم إدخال التأكيد المطلوب.');return;}var reason=prompt('سبب الاستعادة (اختياري):','استعادة يدوية من الأرشيف');if(reason===null)return;var b=document.getElementById('mxArchiveBody');if(b)b.innerHTML='<div class="card" style="text-align:center;padding:28px">⏳ جارٍ تنفيذ الاستعادة اليدوية…</div>';api().rpc('mx_t_archive_student',{p_student_id:id,p_status:'restore',p_reason:reason}).then(function(r){if(!r||r.error){var msg=r&&r.error==='username_conflict'?'لا يمكن الاستعادة: الكود مستخدم لطالب نشط.':(r&&r.error||'تعذر تنفيذ الاستعادة');throw new Error(msg);}notifyA('✅ تمت استعادة الطالب يدوياً وتم تسجيل العملية.');mxArchiveRefresh();if(typeof window.mxRefreshArchivedRoster==='function')window.mxRefreshArchivedRoster();}).catch(function(e){notifyA('⚠️ '+e.message);mxArchiveRefresh();});};
+  var oldRS=window.renderSettings;if(oldRS&&!oldRS.__mxArchiveWrapped){var wrapped=function(){var r=oldRS.apply(this,arguments);setTimeout(mount,40);return r;};wrapped.__mxArchiveWrapped=true;window.renderSettings=wrapped;}
+  var css=document.createElement('style');css.textContent='.mx-archive-hero{display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#0f172a,#164e63);color:#fff;border-radius:16px;padding:18px;margin-bottom:12px}.mx-archive-hero h2{margin:3px 0;font-size:22px}.mx-archive-hero p{margin:0;color:#d1fae5;font-size:12px}.mx-archive-kicker{font-size:11px;color:#99f6e4;font-weight:800}.mx-archive-warning{border:1px solid #fde68a;background:#fffbeb;color:#92400e;border-radius:12px;padding:11px 13px;font-size:12px;font-weight:700;margin-bottom:12px}.mx-archive-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.mx-archive-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}.mx-archive-summary>div{background:#fff;border:1px solid #e2e8f0;border-right:4px solid #0e7490;border-radius:12px;padding:13px}.mx-archive-summary b,.mx-archive-summary span{display:block}.mx-archive-summary b{font-size:22px;color:#0f766e}.mx-archive-summary span{font-size:11px;color:#64748b;margin-top:3px}.mx-archive-empty{text-align:center;padding:35px;color:#64748b}.mx-archive-empty h3{color:#166534}@media(max-width:650px){.mx-archive-hero{align-items:stretch;flex-direction:column}.mx-archive-summary{grid-template-columns:1fr}}';document.head.appendChild(css);
+  mount();setTimeout(mount,300);setTimeout(mount,1000);
+})();
+</script>
+
 </body>
 </html>
