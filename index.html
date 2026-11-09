@@ -4703,6 +4703,31 @@ function cdCalcFinalScore(stid){var rec=CD.state&&CD.state.finalExams&&CD.state.
 function cdGetSimpleGrade(type,stid){try{var cg=CD.state&&CD.state.studentGrades&&CD.state.studentGrades[CD.classKey];if(!cg||!cg[type])return null;return cg[type][stid]||null;}catch(e){return null;}}
 function cdCalcHomeworkScore(stid){var cg=CD.state&&CD.state.studentGrades&&CD.state.studentGrades[CD.classKey];var arr=(cg&&cg.homework&&cg.homework.assignments)||[];if(!arr.length)return{percent:null};var total=0,maxT=0;arr.forEach(function(a){var g=a.grades&&a.grades[stid];if(g)total+=g.value;maxT+=a.maxGrade||0;});return{percent:maxT>0?Math.round((total/maxT)*100):null};}
 
+var CD_EXAM_LIVE_SYNC={};
+function cdSyncExamGradesLive(classKey){
+  if(!classKey)return Promise.resolve(false);
+  if(CD_EXAM_LIVE_SYNC[classKey])return CD_EXAM_LIVE_SYNC[classKey];
+  CD_EXAM_LIVE_SYNC[classKey]=cdCloudRpc('mx_t_exam_grades',{p_class_key:classKey}).then(function(r){
+    if(!r||r.error)throw new Error((r&&r.error)||'تعذر تحميل درجات الاختبارات');
+    if(!CD.state.studentGrades)CD.state.studentGrades={};
+    if(!CD.state.studentGrades[classKey])CD.state.studentGrades[classKey]={};
+    var cg=CD.state.studentGrades[classKey];
+    cg.examsTotal={};
+    (r.items||[]).forEach(function(x){
+      var v=Number(x.value);
+      if(!isFinite(v))v=0;
+      var rec={value:Math.max(0,Math.min(15,Math.round(v*100)/100)),max:15,at:new Date().toISOString(),source:'supabase'};
+      cg.examsTotal[x.student_id]=rec;
+      (CD.students||[]).forEach(function(st){if(st.id===x.student_id||st.studentId===x.student_id||st.student_id===x.student_id){cg.examsTotal[st.id]=rec;if(st.studentId)cg.examsTotal[st.studentId]=rec;}});
+    });
+    if(typeof cdRenderStats==='function')cdRenderStats();
+    if(typeof cdRenderYearWorkTab==='function'&&CD.tab==='yearwork')cdRenderYearWorkTab();
+    if(typeof cdToast==='function')cdToast('✅ تمت مزامنة درجات الاختبارات الحقيقية من Supabase ('+(r.items||[]).length+' طالب)');
+    return true;
+  }).catch(function(e){if(typeof cdToast==='function')cdToast('⚠️ تعذر مزامنة درجات الاختبارات: '+e.message);return false;}).then(function(ok){delete CD_EXAM_LIVE_SYNC[classKey];return ok;});
+  return CD_EXAM_LIVE_SYNC[classKey];
+}
+window.cdSyncExamGradesLive=cdSyncExamGradesLive;
 function cdCalcExamsScore(stid){
   var cgStudent = CD.state && CD.state.studentGrades && CD.state.studentGrades[CD.classKey];
   if(cgStudent && cgStudent.examsTotal && cgStudent.examsTotal[stid] && cgStudent.examsTotal[stid].value != null){
@@ -5398,6 +5423,7 @@ async function cdInit(forceClassKey){
     sessionStorage.setItem('cd_active_class',CD.classKey);
     CD.students=((s.classes&&s.classes[CD.classKey])||[]).filter(function(st){return !isArchivedStudent(st)&&!st.demo;});
     cdRenderHeader();cdRenderClassSwitcher();cdRenderStats();
+    cdSyncExamGradesLive(CD.classKey);
     if(window.mxPaintClassRecovery)window.mxPaintClassRecovery();
     console.log('✅ لوحة الفصل — جاهزة ('+CD.students.length+' طالب)');
   }catch(e){console.error('Init error:',e);cdToast('⚠️ حدث خطأ');}
