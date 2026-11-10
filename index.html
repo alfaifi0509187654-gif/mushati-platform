@@ -934,8 +934,6 @@ html:has(.cxs) body{background:linear-gradient(145deg,#f8fafc 0%,#eef2ff 60%,#ec
    ✅ المراحل الأربع ثابتة
    ============================================================ */
 var STORAGE_KEY='mashati_v1';
-function mxToggleSidebar(){var b=document.querySelector('.hamburger'),side=el('sidebar');if(!side)return;var open=side.classList.toggle('open');if(b){b.setAttribute('aria-expanded',open?'true':'false');b.setAttribute('aria-label',open?'إغلاق القائمة الجانبية':'فتح القائمة الجانبية');}}
-document.addEventListener('keydown',function(ev){if(ev.key==='Escape'){var side=el('sidebar'),b=document.querySelector('.hamburger');if(side&&side.classList.contains('open')){side.classList.remove('open');if(b){b.setAttribute('aria-expanded','false');b.setAttribute('aria-label','فتح القائمة الجانبية');}if(b)b.focus();}}});
 function el(id){return document.getElementById(id);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
@@ -5603,6 +5601,7 @@ window.cdInit=cdInit;
 </script>
 
 <script src="mx-automation-center.js?v=20261110-1"></script>
+<script src="mx-accessibility.js?v=20261110-1"></script>
 </body>
 </html>
 
