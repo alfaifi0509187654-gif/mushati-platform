@@ -3239,10 +3239,11 @@ window.mxCopyLink=function(kind,id){var t=findTarget(stuOpenClass,kind,id);if(!t
 
 /* ---------- سحب النتائج ورصد الدرجات ---------- */
 function examYearworkMax(t){var o=t&&t.obj&&t.obj.online||{};var n=Number(o.yearworkMax);if(n>0)return n;if(t&&t.kind==='chapter'&&Number(t.obj.chapterIndex)===1)return 15;return Number(t&&t.obj.maxGrade)||(t&&t.kind==='chapter'?5:10);}
-function gradeTarget(t,stid,value,force){var g=t.obj.grades[stid];if(g&&!g.online&&!force)return 'manual';if(g&&g.online&&g.value===value)return 'same';t.obj.grades[stid]={value:value,ts:Date.now(),online:true,source:'online',examId:t.obj.online&&t.obj.online.examId||null};return 'set';}
-function resolveExamStudentId(ck,rawId){var raw=String(rawId==null?'':rawId),list=state.classes[ck]||[],hit=list.filter(function(st){return String(st.id)===raw||String(st.code||'').toUpperCase()===raw.toUpperCase()||String(st.username||'').toUpperCase()===raw.toUpperCase();})[0];return hit?hit.id:raw;}
-function pull(ck,t,force){var o=t.obj.online;if(!o||!o.examId)return Promise.resolve(null);return rpc('mx_close_expired',{p_exam:o.examId}).catch(function(){}).then(function(){return rest('mx_attempts?exam_id=eq.'+o.examId+'&select=student_id,started_at,submitted_at,score,max_score,deadline&order=submitted_at.asc');}).then(function(rows){var stats={started:0,submitted:0,set:0,manual:0,duplicates:0,unmatched:0},res={},ge=[],seen={};(rows||[]).forEach(function(r){var localId=resolveExamStudentId(ck,r.student_id);if(seen[localId]){stats.duplicates++;return;}seen[localId]=true;stats.started++;res[localId]={s:r.started_at,sub:r.submitted_at,score:r.score,max:r.max_score};if(r.submitted_at&&r.max_score>0){stats.submitted++;var max=examYearworkMax(t),v=Math.round((Number(r.score)/Number(r.max_score))*max*10)/10;if(t.kind==='chapter'&&max!==15)v=Math.round(v*2)/2;var k=gradeTarget(t,localId,v,force);if(k==='set')stats.set++;if(k==='manual')stats.manual++;if(k==='set')ge.push({student_id:r.student_id,item:{item_key:'exam:'+o.examId,class_key:ck,category:t.kind==='chapter'?'chapter':'quiz',title:'درجة اختبار إلكتروني',value:v,max:max},kind:'grade_add',title:'تم رصد درجة الاختبار الإلكتروني',body:'تم رصد '+v+' من '+max,key:'exam:'+o.examId+':'+r.student_id+':'+v});}});o.results=res;o.lastSync=Date.now();o.stats=stats;save();return ge.length?X.rpc('mx_t_grade_events',{p_events:ge}).then(function(x){if(x&&x.error)throw new Error(x.error);return stats;}).catch(function(e){var q=load('mx_grade_outbox',[]);store('mx_grade_outbox',q.concat(ge));throw e;}):Promise.resolve(stats);});}
-window.mxPull=function(kind,id,force){var t=findTarget(stuOpenClass,kind,id);if(!t)return;if(force&&!confirm('استبدال الدرجات المرصودة يدوياً بدرجات الاختبار الإلكتروني لهذا الاختبار؟'))return;toast('⏳ جارٍ سحب النتائج…');pull(stuOpenClass,t,force).then(function(s){renderStudentSection();if(s)toast('✅ سلّم '+s.submitted+' طالب · رُصد '+s.set+(s.manual?' · '+s.manual+' درجة يدوية لم تُستبدل':''));}).catch(function(e){toast('⚠️ '+e.message);});};
+function gradeTarget(t,stid,value,force){var g=t.obj.grades[stid];if(g&&g.online&&Number(g.value)===Number(value))return 'same';t.obj.grades[stid]={value:value,ts:Date.now(),online:true,source:'supabase-exam',examId:t.obj.online&&t.obj.online.examId||null};return 'set';}
+function examNormCode(v){return String(v==null?'':v).trim().toUpperCase().replace(/[٠-٩]/g,function(d){return String('٠١٢٣٤٥٦٧٨٩'.indexOf(d));}).replace(/[ـ\s\-_.]/g,'');}
+function resolveExamStudentId(ck,rawId){var raw=String(rawId==null?'':rawId),norm=examNormCode(raw),list=state.classes[ck]||[],hit=list.filter(function(st){return [st.id,st.studentId,st.student_id,st.code,st.username].some(function(v){return v!=null&&(String(v)===raw||examNormCode(v)===norm);});})[0];return hit?String(hit.id||hit.studentId||hit.student_id):null;}
+function pull(ck,t,force){var o=t.obj.online;if(!o||!o.examId)return Promise.resolve(null);return rpc('mx_close_expired',{p_exam:o.examId}).catch(function(){}).then(function(){return rest('mx_attempts?exam_id=eq.'+o.examId+'&select=student_id,started_at,submitted_at,score,max_score,deadline&order=submitted_at.asc');}).then(function(rows){var stats={started:0,submitted:0,set:0,manual:0,duplicates:0,unmatched:0},res={},ge=[],seen={};(rows||[]).forEach(function(r){var localId=resolveExamStudentId(ck,r.student_id);if(!localId){stats.unmatched++;return;}if(seen[localId]){stats.duplicates++;return;}seen[localId]=true;stats.started++;res[localId]={s:r.started_at,sub:r.submitted_at,score:r.score,max:r.max_score};if(r.submitted_at&&Number(r.max_score)>0){stats.submitted++;var max=examYearworkMax(t),v=Math.round((Number(r.score)/Number(r.max_score))*max*10)/10;if(t.kind==='chapter'&&max!==15)v=Math.round(v*2)/2;var k=gradeTarget(t,localId,v,force);if(k==='set')stats.set++;if(k==='set')ge.push({student_id:r.student_id,item:{item_key:'exam:'+o.examId,class_key:ck,category:t.kind==='chapter'?'chapter':'quiz',title:'درجة اختبار إلكتروني',value:v,max:max},kind:'grade_add',title:'تم رصد درجة الاختبار الإلكتروني',body:'تم رصد '+v+' من '+max,key:'exam:'+o.examId+':'+r.student_id+':'+v});}});o.results=res;o.lastSync=Date.now();o.stats=stats;save();return ge.length?X.rpc('mx_t_grade_events',{p_events:ge}).then(function(x){if(x&&x.error)throw new Error(x.error);return stats;}).catch(function(e){var q=load('mx_grade_outbox',[]);store('mx_grade_outbox',q.concat(ge));throw e;}):Promise.resolve(stats);});}
+window.mxPull=function(kind,id,force){var t=findTarget(stuOpenClass,kind,id);if(!t)return;if(force&&!confirm('استبدال الدرجات المرصودة يدوياً بدرجات الاختبار الإلكتروني لهذا الاختبار؟'))return;toast('⏳ جارٍ سحب النتائج…');pull(stuOpenClass,t,force).then(function(s){renderStudentSection();if(s)toast('✅ سلّم '+s.submitted+' طالب · رُصد '+s.set+(s.unmatched?' · تعذر ربط '+s.unmatched+' نتيجة':'')+(s.duplicates?' · استُبعدت '+s.duplicates+' محاولة مكررة':'') );}).catch(function(e){toast('⚠️ '+e.message);});};
 window.mxToggleActive=function(kind,id){var t=findTarget(stuOpenClass,kind,id);if(!t||!t.obj.online)return;var o=t.obj.online,nv=o.disabled?true:false;if(!nv&&!confirm('إيقاف الاختبار؟ لن يتمكن الطلاب من الدخول (تبقى النتائج المسلّمة).'))return;rest('mx_exams?id=eq.'+o.examId,{method:'PATCH',body:{active:nv}}).then(function(){o.disabled=!nv;save();renderStudentSection();toast(nv?'▶️ تم تفعيل الاختبار':'⏸️ تم إيقاف الاختبار');}).catch(function(e){toast('⚠️ '+e.message);});};
 window.mxResults=function(kind,id){var ck=stuOpenClass,t=findTarget(ck,kind,id);if(!t||!t.obj.online)return;var o=t.obj.online,res=o.results||{},list=window.stWorkingList?stWorkingList(ck):state.classes[ck];var max=examYearworkMax(t);var h='<div class="sts-hint" style="margin-bottom:8px">آخر تحديث: '+(o.lastSync?new Date(o.lastSync).toLocaleString('ar-SA-u-nu-latn-ca-gregory'):'—')+'</div><div class="rep-table-wrap"><table class="rep-table" style="min-width:420px"><thead><tr><th>#</th><th style="text-align:right">الطالب</th><th>الحالة</th><th>النتيجة</th><th>الدرجة في السجل</th></tr></thead><tbody>';list.forEach(function(s,i){var r=res[s.id],g=t.obj.grades[s.id];var stt=!r?'<span class="badge b-slate">لم يبدأ</span>':(r.sub?'<span class="badge b-green">سلّم</span>':'<span class="badge b-amber">جارٍ</span>');h+='<tr><td>'+(i+1)+'</td><td style="text-align:right">'+esc(s.name)+'</td><td>'+stt+'</td><td>'+(r&&r.sub?r.score+' / '+r.max:'—')+'</td><td>'+(g?g.value+' / '+max+(g.online?' 🌐':' ✍️'):'—')+'</td></tr>';});h+='</tbody></table></div><div class="sts-hint" style="margin-top:8px">🌐 مرصودة من الاختبار الإلكتروني · ✍️ مرصودة يدوياً (لا تُستبدل تلقائياً)</div>';openModal('📊 نتائج: '+esc(kind==='chapter'?t.obj.chapterName:t.obj.title),h,'<button class="btn btn-primary" onclick="closeModal();mxPull(\''+kind+'\',\''+id+'\')">🔄 تحديث ورصد</button>'+(o.stats&&o.stats.manual?'<button class="btn btn-ghost" onclick="closeModal();mxPull(\''+kind+'\',\''+id+'\',true)">استبدال اليدوية</button>':'')+'<button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>',{large:true});};
 /* رصد تلقائي في الخلفية */
@@ -4730,21 +4731,9 @@ function cdSyncExamGradesLive(classKey){
 window.cdSyncExamGradesLive=cdSyncExamGradesLive;
 function cdCalcExamsScore(stid){
   var cgStudent = CD.state && CD.state.studentGrades && CD.state.studentGrades[CD.classKey];
-  if(cgStudent && cgStudent.examsTotal && cgStudent.examsTotal[stid] && cgStudent.examsTotal[stid].value != null){
-    var v = Number(cgStudent.examsTotal[stid].value);
-    if(!isNaN(v) && v >= 0){
-      return {percent: Math.min(100, Math.round((v/15)*100))};
-    }
-  }
-  var cg = CD.state && CD.state.exams && CD.state.exams[CD.classKey];
-  if(!cg) return {percent: null};
-  var all = [];
-  (cg.quizzes||[]).forEach(function(q){var g=q.grades&&q.grades[stid];if(g&&q.maxGrade)all.push(Math.round((g.value/q.maxGrade)*100));});
-  (cg.chapters||[]).forEach(function(c){var g=c.grades&&c.grades[stid];if(g&&c.maxGrade)all.push(Math.round((g.value/c.maxGrade)*100));});
-  all.sort(function(a,b){return b-a;});
-  var t3 = all.slice(0,3);
-  if(!t3.length) return {percent:null};
-  return {percent: Math.round(t3.reduce(function(s,x){return s+x;},0)/t3.length)};
+  var rec = cgStudent && cgStudent.examsTotal && cgStudent.examsTotal[stid];
+  if(rec && rec.value != null){var v=Number(rec.value);if(isFinite(v)&&v>=0)return {percent:Math.min(100,Math.round((v/15)*100))};}
+  return {percent:null};
 }
 window.cdCalcExamsScore = cdCalcExamsScore;
 
@@ -5082,6 +5071,9 @@ function cdManageExams(stid){
 window.cdManageExams = cdManageExams;
 
 function cdSaveExamsScore(stid){
+  cdToast('ℹ️ درجة الاختبارات تُحسب تلقائياً من الاختبارات الإلكترونية المنشورة');
+  if(typeof cdSyncExamGradesLive==='function')cdSyncExamGradesLive(CD.classKey);
+  return;
   var inp = cdEl('cdEXScore');
   if(!inp) return;
   var val = parseFloat(inp.value);
@@ -5103,6 +5095,9 @@ function cdSaveExamsScore(stid){
 window.cdSaveExamsScore = cdSaveExamsScore;
 
 function cdResetExamsTotal(stid){
+  cdToast('ℹ️ تم إلغاء مصدر الرصد اليدوي؛ الدرجة تُقرأ من الاختبارات الإلكترونية فقط');
+  if(typeof cdSyncExamGradesLive==='function')cdSyncExamGradesLive(CD.classKey);
+  return;
   var cg = CD.state.studentGrades[CD.classKey];
   if(cg && cg.examsTotal) delete cg.examsTotal[stid];
   cdSaveState().then(function(ok){
