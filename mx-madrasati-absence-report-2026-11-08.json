@@ -1,0 +1,298 @@
+{
+  "source": "Madrasati My Browser read-only capture",
+  "source_url": "https://schools.madrasati.sa/SchoolSchedule/Schedule/ManageLecture?SchoolId=BD003E3793392777449F2CB7F99C98EA&lectureId=4&dateTicks=639296928000000000&subjectId=36745&classroomId=79059",
+  "date": "2026-11-08",
+  "lesson": "الحصة الرابعة",
+  "subject": "وزن معادلات الأكسدة والاختزال",
+  "grade_section": "الثالث الثانوي ج",
+  "time": "09:03 ص - 09:43 ص",
+  "present_count": 26,
+  "absent_count": 10,
+  "attendance_rows": [
+    {
+      "student_id": "2981596",
+      "name": "أحمد بن محمد بن احمد باصقر",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3209534",
+      "name": "أحمد محمد احمد حكمي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "4670997",
+      "name": "ابراهيم علي ابراهيم حمدي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "2997879",
+      "name": "احمد احمد علي ولي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "2981620",
+      "name": "احمد جبريل يحي رزيق",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6658832",
+      "name": "احمد عبدالرحمن احمد بهلول حله",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "11407791",
+      "name": "اسماعيل يحي محمد عواجي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3958686",
+      "name": "المعتصم أحمد حسن مدخلي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "2982075",
+      "name": "اياد علاالله احمد الخميسي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6198396",
+      "name": "اياد متعب علي الودعاني",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "4670900",
+      "name": "ايمن منن عبده صعب",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "2981673",
+      "name": "ايهم عبده سليمان مصري",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "3555714",
+      "name": "تركي محمد ناصر السبيعي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "7864106",
+      "name": "حاتم عثمان علي كاملي",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "3536386",
+      "name": "حسام هيثم عبده حكمي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "4671070",
+      "name": "حسن موسى شعبان عبده",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "2574626",
+      "name": "خالد حسن محمد مجرشي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3958796",
+      "name": "زياد نبيل علي عباس",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6365249",
+      "name": "سلمان ابراهيم صالح شايع",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "3958832",
+      "name": "صالح نبيل صالح باسودان",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "2997904",
+      "name": "عبدالرحمن سليمان علي بخيت",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "8112277",
+      "name": "عبدالعزيز عبدالرحيم عبدالعزيز عقيلى",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "2982171",
+      "name": "عبدالعزيز محمد علي الفقيه",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6391969",
+      "name": "عبدالله محرم محمد صبياني",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "2981802",
+      "name": "علي محمد أحمد مهنى",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3959040",
+      "name": "عمرو احمد عبدالله زيدان",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3585919",
+      "name": "عيسى محمد عيسى مجممي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6511736",
+      "name": "كاظم سويد محمد احمد",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3173304",
+      "name": "لؤي بن وائل بن محمد دويري",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "3554318",
+      "name": "ماجد احمد علي زكري",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6393561",
+      "name": "محمد احمد صالح جراد",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "2982345",
+      "name": "محمد زكريا محمد طبيقي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "6021175",
+      "name": "نادر ساري ابراهيم حسن",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "3554672",
+      "name": "ناصر محمد ناصر السبيعي",
+      "status": "present",
+      "status_value": "0"
+    },
+    {
+      "student_id": "2982419",
+      "name": "نواف مجدي محمد صائغ",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "4671071",
+      "name": "يزن احمد حسين ابكر",
+      "status": "absent",
+      "status_value": "12"
+    }
+  ],
+  "absent_students": [
+    {
+      "student_id": "2981673",
+      "name": "ايهم عبده سليمان مصري",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "7864106",
+      "name": "حاتم عثمان علي كاملي",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "4671070",
+      "name": "حسن موسى شعبان عبده",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "6365249",
+      "name": "سلمان ابراهيم صالح شايع",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "3958832",
+      "name": "صالح نبيل صالح باسودان",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "8112277",
+      "name": "عبدالعزيز عبدالرحيم عبدالعزيز عقيلى",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "3173304",
+      "name": "لؤي بن وائل بن محمد دويري",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "6393561",
+      "name": "محمد احمد صالح جراد",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "2982419",
+      "name": "نواف مجدي محمد صائغ",
+      "status": "absent",
+      "status_value": "12"
+    },
+    {
+      "student_id": "4671071",
+      "name": "يزن احمد حسين ابكر",
+      "status": "absent",
+      "status_value": "12"
+    }
+  ],
+  "approval_status": "pending_teacher_approval",
+  "save_performed": false,
+  "notes": [
+    "تمت القراءة فقط من شاشة الحضور والتحفيز.",
+    "لم يتم الضغط على زر حفظ.",
+    "المعرفات المدرسية مستخرجة من الصفحة، وتحتاج مطابقة مع سجلات المشاطي قبل الإرسال."
+  ]
+}
