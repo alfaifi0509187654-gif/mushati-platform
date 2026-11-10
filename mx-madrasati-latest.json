@@ -1,0 +1,16 @@
+{
+  "source": "madrasati",
+  "source_url": "https://schools.madrasati.sa/Teacher/TimeTable/Index/BD003E3793392777449F2CB7F99C98EA",
+  "read_at": "2026-11-10T09:19:15Z",
+  "timezone": "Asia/Riyadh",
+  "date_display": "الثلاثاء 10 نوفمبر 2026",
+  "login_verified": true,
+  "read_only": true,
+  "lessons": [
+    {"period": 2, "status": "تم رصد الحضور", "subject": "وزن معادلات الأكسدة والاختزال", "start": "07:41 ص", "end": "08:21 ص", "grade": "الثالث الثانوي", "section": "ج"},
+    {"period": 3, "status": "لم يتم رصد الحضور", "subject": "المدن والمجتمعات المستدامة", "start": "08:22 ص", "end": "09:02 ص", "grade": "الثالث الثانوي", "section": "ج"},
+    {"period": 4, "status": "لم يتم رصد الحضور", "subject": "وزن معادلات الأكسدة والاختزال", "start": "09:03 ص", "end": "09:43 ص", "grade": "الثالث الثانوي", "section": "د"},
+    {"period": 5, "status": "لم يتم رصد الحضور", "subject": "وزن معادلات الأكسدة والاختزال", "start": "09:44 ص", "end": "10:24 ص", "grade": "الثالث الثانوي", "section": "أ"}
+  ],
+  "unassigned_periods": [1, 6, 7]
+}
