@@ -288,11 +288,13 @@
       "status_value": "12"
     }
   ],
-  "approval_status": "pending_teacher_approval",
-  "save_performed": false,
+  "approval_status": "approved_and_saved",
+  "save_performed": true,
   "notes": [
     "تمت القراءة فقط من شاشة الحضور والتحفيز.",
     "لم يتم الضغط على زر حفظ.",
     "المعرفات المدرسية مستخرجة من الصفحة، وتحتاج مطابقة مع سجلات المشاطي قبل الإرسال."
-  ]
+  ],
+  "save_verified_at": "2026-11-10T13:19:21+03:00",
+  "save_verification": "عاد النظام إلى الجدول الأسبوعي وظهرت الحصة بحالة تم رصد الحضور."
 }
