@@ -5419,13 +5419,20 @@ async function cdHydrateCloudGrades(s){
     var items=r&&Array.isArray(r.items)?r.items:[];
     items.forEach(function(x){
       if(!x||!x.class_key||!x.student_id||x.value===undefined||x.value===null)return;
+      var targets=[x.class_key];
+      if(x.class_key==='g12_s1'&&s.classes){
+        var matched=Object.keys(s.classes).filter(function(k){return k.indexOf('g12_s1_')===0&&(s.classes[k]||[]).some(function(st){return String(st.id)===String(x.student_id);});});
+        if(matched.length)targets=matched;
+      }
       if(!s.studentGrades)s.studentGrades={};
-      var cg=s.studentGrades[x.class_key]||(s.studentGrades[x.class_key]={});
-      if(!cg.cloudGradeItems)cg.cloudGradeItems={};
-      if(!cg.cloudGradeItems[x.student_id])cg.cloudGradeItems[x.student_id]={};
-      var old=cg.cloudGradeItems[x.student_id][x.item_key];
-      if(old&&old.updated_at&&x.updated_at&&new Date(old.updated_at)>new Date(x.updated_at))return;
-      cg.cloudGradeItems[x.student_id][x.item_key]={value:Number(x.value),max:x.max==null?null:Number(x.max),title:x.title||x.item_key,category:x.category,item_key:x.item_key,updated_at:x.updated_at||null,source:'supabase'};
+      targets.forEach(function(target){
+        var cg=s.studentGrades[target]||(s.studentGrades[target]={});
+        if(!cg.cloudGradeItems)cg.cloudGradeItems={};
+        if(!cg.cloudGradeItems[x.student_id])cg.cloudGradeItems[x.student_id]={};
+        var old=cg.cloudGradeItems[x.student_id][x.item_key];
+        if(old&&old.updated_at&&x.updated_at&&new Date(old.updated_at)>new Date(x.updated_at))return;
+        cg.cloudGradeItems[x.student_id][x.item_key]={value:Number(x.value),max:x.max==null?null:Number(x.max),title:x.title||x.item_key,category:x.category,item_key:x.item_key,updated_at:x.updated_at||null,source:'supabase'};
+      });
     });
   }catch(e){console.warn('Cloud grades hydration skipped',e);}
 }
@@ -5651,4 +5658,3 @@ window.cdInit=cdInit;
 <script type="module" src="class-bag/app.mjs?v=20261109-1"></script>
 </body>
 </html>
-
