@@ -3510,6 +3510,7 @@ function studentRun(cf,root){
  var C2={url:cf.u,key:cf.k},TK='mx_chat_tok_'+cf.o,S={token:localStorage.getItem(TK),name:localStorage.getItem(TK+'_n')||'',convs:[],conv:null,tab:'msgs',open:true,net:navigator.onLine!==false,N:{items:{},max:0,topic:null,prefs:{},loaded:false},content:{curriculum:[],questions:[],exams:[],assignments:[]},remote:{timer:null,started:false,sessions:{}},hl:null,bell:false};
  var goParam=null;try{goParam=JSON.parse(new URLSearchParams(location.search).get('go')||'null');}catch(e){}
  function call(fn,a){return X.rpc(fn,a,true,C2);}
+ window.mxBagStudentAccess=function(){return S.token?{token:S.token,name:S.name,owner:cf.o,rpc:call}:null;};
  var srt=RT(function(){return C2;});srt.onStatus(function(){pn();});
  var eng2=Engine({key:'mx_s_outbox_'+cf.o,me:'student',myName:function(){return S.name;},fetch:function(c,after){return call('mx_s_messages',{p_token:S.token,p_conv:c,p_after:after||0});},send:function(c,b,cid){return call('mx_s_send',{p_token:S.token,p_conv:c,p_body:b,p_client:cid});},onChange:function(c){if(S.conv===c)paintT();},onSent:function(){inbox();},onSession:function(){logout(true);},onNet:function(on){S.net=on;pn();}});window.__cxEng=eng2;
  window.__cxStudentSend=function(v){eng2.send(S.conv,v);};
@@ -5411,11 +5412,52 @@ function cdSelfTest(){
 
 
 
+async function cdHydrateCloudGrades(s){
+  try{
+    if(!s||!window.__mx||typeof window.__mx.rpc!=='function')return;
+    var r=await window.__mx.rpc('mx_t_grade_items',{});
+    var items=r&&Array.isArray(r.items)?r.items:[];
+    items.forEach(function(x){
+      if(!x||!x.class_key||!x.student_id||x.value===undefined||x.value===null)return;
+      if(!s.studentGrades)s.studentGrades={};
+      var cg=s.studentGrades[x.class_key]||(s.studentGrades[x.class_key]={});
+      if(!cg.cloudGradeItems)cg.cloudGradeItems={};
+      if(!cg.cloudGradeItems[x.student_id])cg.cloudGradeItems[x.student_id]={};
+      var old=cg.cloudGradeItems[x.student_id][x.item_key];
+      if(old&&old.updated_at&&x.updated_at&&new Date(old.updated_at)>new Date(x.updated_at))return;
+      cg.cloudGradeItems[x.student_id][x.item_key]={value:Number(x.value),max:x.max==null?null:Number(x.max),title:x.title||x.item_key,category:x.category,item_key:x.item_key,updated_at:x.updated_at||null,source:'supabase'};
+    });
+  }catch(e){console.warn('Cloud grades hydration skipped',e);}
+}
+
+function cdNormalizeImportedGrades(s){
+  if(!s||!s.studentGrades)return;
+  Object.keys(s.studentGrades).forEach(function(ck){
+    var cg=s.studentGrades[ck]||(s.studentGrades[ck]={}),items=cg.cloudGradeItems||{};
+    Object.keys(items).forEach(function(stid){
+      var byKey=items[stid]||{};
+      Object.keys(byKey).forEach(function(itemKey){
+        var x=byKey[itemKey];if(!x||x.value===undefined||x.value===null)return;
+        var cat=x.category,bucket=cat==='exam_average'?'examsTotal':cat;
+        if(['participation','activity','research','worksheets'].indexOf(bucket)<0&&bucket!=='examsTotal')return;
+        if(!cg[bucket])cg[bucket]={};
+        var old=cg[bucket][stid],oldTs=old&&(old.ts||old.at),newTs=x.updated_at;
+        if(old&&old.source!=='supabase'&&oldTs&&newTs&&new Date(oldTs)>new Date(newTs))return;
+        cg[bucket][stid]=bucket==='examsTotal'
+          ? {value:Number(x.value),max:x.max==null?15:Number(x.max),at:newTs||new Date().toISOString(),source:'supabase'}
+          : {value:Number(x.value),max:x.max==null?(bucket==='activity'?5:10):Number(x.max),ts:newTs||new Date().toISOString(),source:'supabase'};
+      });
+    });
+  });
+}
+
 async function cdInit(forceClassKey){
   try{
     var s=await cdGetState();
     if(!s){cdToast('⚠️ لا توجد بيانات مشتركة');return;}
     if(typeof state==='object'&&state&&state.classes)s=state;
+    await cdHydrateCloudGrades(s);
+    cdNormalizeImportedGrades(s);
     CD.state=s;CD.classKey=forceClassKey||cdLoadClassKey();
     var parts=CD.classKey.split('_');CD.section=parts.length>2?parts[2]:'أ';
     sessionStorage.setItem('cd_active_class',CD.classKey);
@@ -5606,6 +5648,7 @@ window.cdInit=cdInit;
 <script src="mx-accessibility.js?v=20261110-1"></script>
 <script src="mx-madrasati-sync.js?v=20261110-1"></script>
 <script src="mx-madrasati-review.js?v=20261110-1"></script>
+<script type="module" src="class-bag/app.mjs?v=20261109-1"></script>
 </body>
 </html>
 
